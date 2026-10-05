@@ -4,7 +4,7 @@
   // Must match data-version in index.html. Bump both (and the ?v= on the
   // style/script links) on every change: right after an update, a browser can
   // otherwise pair a cached old page with this new script, which breaks the quiz.
-  const VERSION = "2026-10-05.8";
+  const VERSION = "2026-10-05.9";
   if (document.documentElement.dataset.version !== VERSION) {
     // Load the page again under a new URL so the browser can't use its cached copy.
     const key = "carer-training-reloaded-for";

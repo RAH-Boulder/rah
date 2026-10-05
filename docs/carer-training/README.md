@@ -1,4 +1,4 @@
-# Annual In-Home Care Training
+# Annual Caregiver Training
 
 A small static site: a caregiver
 

@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 window.TRAINING_CONFIG = {
-  title: "Annual In-Home Care Training",
+  title: "Annual Caregiver Training",
 
   // Completion records and caregiver questions are emailed here.
   notifyEmail: "[email removed]",

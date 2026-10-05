@@ -16,10 +16,8 @@ window.TRAINING_CONFIG = {
 
   // YouTube video ID of the training video (from https://youtu.be/<ID>). The
   // video must be Unlisted (not Private) with "Allow embedding" on. With a
-  // YouTube video the site tracks how much was watched and keeps the quiz
-  // locked until watchPercent is reached.
+  // YouTube video the site records how much was watched (it never locks the quiz).
   youtubeId: "0OPQwgSaJKQ",
-  watchPercent: 90,
 
   // Fallback used only if youtubeId is empty: the Google Drive video (no
   // watch tracking). Must be shared as "Anyone with the link can view".

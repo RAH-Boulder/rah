@@ -4,7 +4,7 @@
   // Must match data-version in index.html. Bump both (and the ?v= on the
   // style/script links) on every change: right after an update, a browser can
   // otherwise pair a cached old page with this new script, which breaks the quiz.
-  const VERSION = "2026-10-05.20";
+  const VERSION = "2026-10-05.21";
   if (document.documentElement.dataset.version !== VERSION) {
     // Load the page again under a new URL so the browser can't use its cached copy.
     const key = "carer-training-reloaded-for";
@@ -218,12 +218,11 @@
 
 
   // ----- Video -----
-  // With a YouTube video, track which seconds were actually played (skipping
-  // ahead doesn't count) and keep the quiz locked until cfg.watchPercent is
-  // reached. Progress is saved on this device so a reload doesn't lose it.
-  // `watched` is null when tracking isn't possible (Drive video, or the
-  // YouTube player failed to load).
-  const video = { pct: null, unlocked: true };
+  // With a YouTube video, record which seconds were actually played (skipping
+  // ahead doesn't count). This is only a record: the quiz is never locked.
+  // Progress is saved on this device so a reload doesn't lose it. `pct` is
+  // null when tracking isn't possible (Drive video, or YouTube didn't load).
+  const video = { pct: null };
 
   function watchedLabel() {
     return video.pct === null ? "Not tracked" : `${video.pct}%`;
@@ -235,7 +234,6 @@
       $("video-frame").hidden = false;
       return;
     }
-    const need = cfg.watchPercent;
     const key = `carer-training-watched-${cfg.youtubeId}`;
     let seen = null;      // one byte per second of video: 1 = played
     let lastTime = 0;     // where they left off, for resuming
@@ -253,21 +251,12 @@
     const saved = load();
 
     video.pct = 0;
-    video.unlocked = false;
     $("watch").hidden = false;
 
     function render() {
       $("watch-fill").style.width = `${Math.min(video.pct, 100)}%`;
-      if (video.unlocked) {
-        $("watch-text").textContent = `You've watched ${video.pct}% of the video. The quiz is unlocked.`;
-      } else {
-        $("watch-text").textContent = `You've watched ${video.pct}% of the video. The quiz unlocks at ${need}%.`;
-      }
-      $("watch").classList.toggle("done", video.unlocked);
-      $("to-quiz").disabled = !video.unlocked;
-      $("to-quiz").textContent = video.unlocked
-        ? "I've watched the video — start the quiz"
-        : `Watch at least ${need}% of the video to unlock the quiz`;
+      $("watch-text").textContent = `You've watched ${video.pct}% of the video.`;
+      $("watch").classList.toggle("done", video.pct >= 90);
     }
 
     function init(duration) {
@@ -285,7 +274,6 @@
       let count = 0;
       for (let i = 0; i < seen.length; i++) count += seen[i];
       video.pct = Math.floor((count / seen.length) * 100);
-      if (video.pct >= need) video.unlocked = true;
       render();
     }
 
@@ -342,17 +330,12 @@
       });
     };
 
-    // If YouTube can't load at all (blocked network), don't trap the
-    // caregiver: unlock the quiz and record the video as "Not tracked".
+    // If YouTube can't load at all (blocked network), record the video as
+    // "Not tracked" and say so.
     const failTimer = setTimeout(() => {
       if (player && seen) return;
       video.pct = null;
-      video.unlocked = true;
-      $("watch").hidden = false;
-      $("watch-fill").style.width = "0";
-      $("watch-text").textContent = "The video player couldn't load on this device, so viewing can't be tracked. Please watch the video before taking the quiz.";
-      $("to-quiz").disabled = false;
-      $("to-quiz").textContent = "I've watched the video — start the quiz";
+      $("watch").hidden = true;
     }, 20000);
 
     const tag = document.createElement("script");
@@ -373,7 +356,7 @@
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
-  $("to-quiz").onclick = () => { if (video.unlocked) show("quiz"); };
+  $("to-quiz").onclick = () => show("quiz");
   $("back-to-video").onclick = () => show("video");
 
   // ----- Failed-quiz pop-up -----

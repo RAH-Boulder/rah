@@ -14,7 +14,7 @@ window.TRAINING_CONFIG = {
 
   // Web app URL of the Google Apps Script that adds a row to the completions
   // Google Sheet (apps-script/CompletionsSheet.gs). Leave empty to turn it off.
-  sheetUrl: "",
+  sheetUrl: "https://script.google.com/macros/s/AKfycbwy2R7XDDSDBPFRS1jVaFKcrg8wLnGjqq7f6DF8dnuzjKg1FtmeqtArDKb0R9XpiHGb/exec",
 
   // Google Drive file ID of the training video. The file must be shared as
   // "Anyone with the link can view", otherwise the embedded player stays blank.

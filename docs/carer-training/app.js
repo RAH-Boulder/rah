@@ -4,7 +4,7 @@
   // Must match data-version in index.html. Bump both (and the ?v= on the
   // style/script links) on every change: right after an update, a browser can
   // otherwise pair a cached old page with this new script, which breaks the quiz.
-  const VERSION = "2026-10-05.13";
+  const VERSION = "2026-10-05.14";
   if (document.documentElement.dataset.version !== VERSION) {
     // Load the page again under a new URL so the browser can't use its cached copy.
     const key = "carer-training-reloaded-for";
@@ -122,6 +122,29 @@
     return Promise.all([settled, document.fonts ? document.fonts.ready : null])
       .then(() => withPdfMode(() => signedPdf().outputPdf("blob")))
       .then((blob) => new File([blob], `${fileBase()}.pdf`, { type: "application/pdf" }));
+  }
+
+  // Adds a row to the completions Google Sheet (apps-script/CompletionsSheet.gs).
+  // Sent in the background; the caregiver never sees whether it worked, and
+  // "no-cors" + keepalive let it finish even if they close the page.
+  function addToSheet(scoreText, dateText) {
+    if (!cfg.sheetUrl) return;
+    fetch(cfg.sheetUrl, {
+      method: "POST",
+      mode: "no-cors",
+      keepalive: true,
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        first: result.first,
+        last: result.last,
+        email: result.email,
+        score: scoreText,
+        dateSigned: dateText,
+        signature: result.signature,
+        recordId: result.id,
+        training: cfg.title
+      })
+    }).catch(() => { /* the email is still the record */ });
   }
 
   // Sends an email through FormSubmit's AJAX endpoint (no attachments).
@@ -340,6 +363,7 @@
 
     const subject = `Training completed and form signed: ${result.signedName}`;
     show("done");
+    addToSheet(scoreText, dateText);
 
     const status = $("notify-status");
     if (!cfg.autoSend) { status.hidden = true; return; }

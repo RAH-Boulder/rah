@@ -12,6 +12,10 @@ window.TRAINING_CONFIG = {
   // automatic emails don't put the address in the request.
   formSubmitId: "d344e0396b860ca96cb4112c22e5b833",
 
+  // Web app URL of the Google Apps Script that adds a row to the completions
+  // Google Sheet (apps-script/CompletionsSheet.gs). Leave empty to turn it off.
+  sheetUrl: "",
+
   // Google Drive file ID of the training video. The file must be shared as
   // "Anyone with the link can view", otherwise the embedded player stays blank.
   driveVideoId: "1H7-OliYsH8shxI7KFLKSqMc8ZtP9kkKM",

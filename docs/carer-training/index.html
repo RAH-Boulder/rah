@@ -150,6 +150,9 @@
     <section id="ask" class="card">
       <h2>Have a question?</h2>
       <p>Ask about the training, the quiz or the form. We'll reply by email.</p>
+      <p class="privacy-note" id="ask-privacy"><strong>Please don't include client names or health information.</strong>
+        Questions are sent by email through an outside service, so keep them general
+        (for example, "a client with dementia" instead of a name).</p>
       <form id="ask-form" novalidate>
         <div class="who">
           <label>Your name
@@ -160,7 +163,7 @@
           </label>
         </div>
         <label>Your question
-          <textarea id="ask-text" rows="4" required></textarea>
+          <textarea id="ask-text" rows="4" required aria-describedby="ask-privacy"></textarea>
         </label>
         <p id="ask-status" class="status" role="status" hidden></p>
         <div class="actions">
@@ -170,7 +173,8 @@
     </section>
   </main>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <!-- html2pdf.js 0.10.1 (MIT), copied from the official npm package so no outside site can change it -->
+  <script src="vendor/html2pdf.bundle.min.js"></script>
   <script src="config.js"></script>
   <script src="app.js"></script>
 </body>

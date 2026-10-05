@@ -32,3 +32,9 @@ Set `autoSend: false` to turn this off.
 
 Either way, the last page shows a pre-written email with a "Open in my
 email app" button and a "Copy" button, so the caregiver can send it themselves.
+
+## Files
+
+`vendor/html2pdf.bundle.min.js` is html2pdf.js 0.10.1 (MIT licence, see
+`vendor/html2pdf-LICENSE.txt`), copied from the official npm package rather than
+loaded from a CDN, so no outside site can change the code that runs on this page.

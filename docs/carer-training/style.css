@@ -162,3 +162,7 @@ textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 .form-text ol, .doc-body ol { margin: 0 0 10px; padding-left: 22px; }
 .form-text li, .doc-body li { margin: 3px 0; }
 .form-meta { margin: 0 0 6px; }
+.privacy-note {
+  background: var(--bg); border-left: 3px solid var(--accent); border-radius: 4px;
+  padding: 10px 14px; font-size: .92rem; margin: 0 0 14px;
+}

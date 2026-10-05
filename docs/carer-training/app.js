@@ -4,7 +4,7 @@
   // Must match data-version in index.html. Bump both (and the ?v= on the
   // style/script links) on every change: right after an update, a browser can
   // otherwise pair a cached old page with this new script, which breaks the quiz.
-  const VERSION = "2026-10-05.10";
+  const VERSION = "2026-10-05.11";
   if (document.documentElement.dataset.version !== VERSION) {
     // Load the page again under a new URL so the browser can't use its cached copy.
     const key = "carer-training-reloaded-for";
@@ -410,10 +410,15 @@
         status.textContent = "✓ Thanks — your question was sent. We'll reply by email.";
         $("ask-text").value = "";
       })
-      .catch(() => {
+      .catch((err) => {
         status.className = "status error";
         status.innerHTML = "";
         status.append("We couldn't send it automatically. ");
+        // Show FormSubmit's own reason (e.g. activation needed, too many
+        // requests) so problems can be diagnosed from the page.
+        if (err && err.message && !/^(not sent|Failed to fetch|Load failed|NetworkError)/i.test(err.message)) {
+          status.append(`(FormSubmit said: ${err.message}) `);
+        }
         const a = document.createElement("a");
         a.href = mailto;
         a.textContent = "Email your question instead";

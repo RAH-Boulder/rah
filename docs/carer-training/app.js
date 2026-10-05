@@ -4,7 +4,7 @@
   // Must match data-version in index.html. Bump both (and the ?v= on the
   // style/script links) on every change: right after an update, a browser can
   // otherwise pair a cached old page with this new script, which breaks the quiz.
-  const VERSION = "2026-10-05.3";
+  const VERSION = "2026-10-05.4";
   if (document.documentElement.dataset.version !== VERSION) {
     // Load the page again under a new URL so the browser can't use its cached copy.
     const key = "carer-training-reloaded-for";
@@ -332,36 +332,6 @@
     $("doc-sig-date").textContent = dateText;
 
     const subject = `Training completed and form signed: ${result.signedName}`;
-    const body =
-`Hello,
-
-I have completed the ${cfg.title}, passed the quiz and signed the ${cfg.form.title}.
-
-Name: ${result.signedName}
-Email: ${result.email}
-Score: ${scoreText} (pass mark ${passMark}/${total})
-Date signed: ${dateText}
-Record ID: ${result.id}
-
-My signed form is attached.
-
-Best regards,
-${result.signedName}`;
-
-    $("notify-addr").textContent = cfg.notifyEmail;
-    $("notify-addr").href = `mailto:${cfg.notifyEmail}`;
-    $("mail-to").textContent = cfg.notifyEmail;
-    $("mail-subject").textContent = subject;
-    $("mail-body").textContent = body;
-    $("mailto").href = `mailto:${cfg.notifyEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    $("copy-mail").onclick = () => {
-      const text = `To: ${cfg.notifyEmail}\nSubject: ${subject}\n\n${body}`;
-      navigator.clipboard.writeText(text).then(
-        () => { $("copy-mail").textContent = "Copied!"; setTimeout(() => ($("copy-mail").textContent = "Copy email text"), 2000); },
-        () => alert("Couldn't copy automatically — please select the text and copy it.")
-      );
-    };
-
     show("done");
 
     const status = $("notify-status");
@@ -384,7 +354,7 @@ ${result.signedName}`;
     };
     const fail = () => {
       status.className = "status warn";
-      status.textContent = "We couldn't send your signed form automatically — please download it and email it to the office using the button below.";
+      status.textContent = `We couldn't send your signed form automatically — please download it and email it to ${cfg.notifyEmail}.`;
     };
 
     // Email the record with the signed PDF attached. If that fails, still send
@@ -399,7 +369,7 @@ ${result.signedName}`;
         postForm(Object.assign({}, record, { "Signed PDF": "Not attached — ask the caregiver to email it." }))
           .then(() => {
             status.className = "status warn";
-            status.textContent = "Your completion record was sent, but the signed PDF couldn't be attached — please download it and email it to the office using the button below.";
+            status.textContent = `Your completion record was sent, but the signed PDF couldn't be attached — please download it and email it to ${cfg.notifyEmail}.`;
           }, fail)
       );
   }

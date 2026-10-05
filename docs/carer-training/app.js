@@ -4,7 +4,7 @@
   // Must match data-version in index.html. Bump both (and the ?v= on the
   // style/script links) on every change: right after an update, a browser can
   // otherwise pair a cached old page with this new script, which breaks the quiz.
-  const VERSION = "2026-10-05.18";
+  const VERSION = "2026-10-05.19";
   if (document.documentElement.dataset.version !== VERSION) {
     // Load the page again under a new URL so the browser can't use its cached copy.
     const key = "carer-training-reloaded-for";
@@ -28,7 +28,7 @@
   const $ = (id) => document.getElementById(id);
   const total = cfg.questions.length;
   const passMark = Math.ceil((total * cfg.passPercent) / 100);
-  const formSubmitUrl = `https://formsubmit.co/ajax/${encodeURIComponent(cfg.formSubmitId || cfg.notifyEmail)}`;
+  const formSubmitUrl = `https://formsubmit.co/ajax/${encodeURIComponent(cfg.formSubmitId)}`;
   let result = null;
 
   // ----- Setup -----
@@ -182,7 +182,7 @@
       frame.hidden = true;
       const form = document.createElement("form");
       form.method = "POST";
-      form.action = `https://formsubmit.co/${encodeURIComponent(cfg.formSubmitId || cfg.notifyEmail)}`;
+      form.action = `https://formsubmit.co/${encodeURIComponent(cfg.formSubmitId)}`;
       form.enctype = "multipart/form-data";
       form.target = name;
       form.hidden = true;
@@ -409,7 +409,7 @@
     };
     const fail = () => {
       status.className = "status warn";
-      status.textContent = `We couldn't send your signed form automatically — please download it and email it to ${cfg.notifyEmail}.`;
+      status.textContent = "We couldn't send your signed form automatically — please download it and send it to the office.";
     };
 
     // Email the record with the signed PDF attached. If that fails, still send
@@ -424,7 +424,7 @@
         postForm(Object.assign({}, record, { "Signed PDF": "Not attached — ask the caregiver to email it." }))
           .then(() => {
             status.className = "status warn";
-            status.textContent = `Your completion record was sent, but the signed PDF couldn't be attached — please download it and email it to ${cfg.notifyEmail}.`;
+            status.textContent = "Your completion record was sent, but the signed PDF couldn't be attached — please download it and send it to the office.";
           }, fail)
       );
   }
@@ -455,7 +455,6 @@
       return;
     }
     const subject = `Training question from ${name}`;
-    const mailto = `mailto:${cfg.notifyEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text + "\n\n" + name + "\n" + email)}`;
     const btn = $("ask-send");
     btn.disabled = true;
     status.className = "status warn";
@@ -475,10 +474,7 @@
         if (err && err.message && !/^(not sent|Failed to fetch|Load failed|NetworkError)/i.test(err.message)) {
           status.append(`(${err.message}) `);
         }
-        const a = document.createElement("a");
-        a.href = mailto;
-        a.textContent = "Email your question instead";
-        status.append(a, ".");
+        status.append("Please try again in a few minutes.");
       })
       .finally(() => { btn.disabled = false; });
   });

@@ -7,19 +7,19 @@ A small static site: a caregiver
 3. reads and signs the Annual Caregiver Training Acknowledgement (tick box, first and last name, typed signature, date),
 4. gets the signed form to download as PDF or print, named `First Last 2026.pdf`.
 
-A "Have a question?" box at the bottom of every step sends questions to `notifyEmail`.
+A "Have a question?" box at the bottom of every step emails questions to the office.
 No server, no build step.
 
 ## Change things
 
 Everything editable is in `config.js`:
 
-- `notifyEmail` — who gets completion records and questions ([email removed]).
 - `questions` — the quiz, from "Quiz - Annual Training.docx".
   `answer` is the index of the correct option, counting from 0.
 - `sheetUrl` — optional Google Apps Script that adds a row per completion to a
   Google Sheet. Setup: `apps-script/README.md` in the repository root.
-- `formSubmitId` — FormSubmit's alias for `notifyEmail`, used for the automatic emails.
+- `formSubmitId` — FormSubmit's code for the office inbox, which gets completion records
+  and questions. (The email address itself is deliberately not in this code.)
 - `passPercent` — percentage needed to pass (80, rounded up: 12 of 14).
 - `form` — the acknowledgement caregivers sign: title, organisation, training length,
   topics and the statements they confirm.
@@ -27,11 +27,11 @@ Everything editable is in `config.js`:
 
 ## Completion notice
 
-When someone signs, the page emails `notifyEmail` through
+When someone signs, the page emails the office through
 [FormSubmit](https://formsubmit.co) (free, no account) with the completion record
 and the signed PDF attached (`First Last 2026.pdf`). If the attachment is refused,
 it sends the record without it and asks the caregiver to email the PDF.
-`formSubmitId` is FormSubmit's alias for `notifyEmail`. Set `autoSend: false` to
+`formSubmitId` is FormSubmit's code for the office inbox. Set `autoSend: false` to
 turn this off.
 
 The last page also shows a pre-written email with "Open in my email app" and

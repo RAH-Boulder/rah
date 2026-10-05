@@ -5,11 +5,9 @@
 window.TRAINING_CONFIG = {
   title: "Annual Caregiver Training",
 
-  // Completion records and caregiver questions are emailed here.
-  notifyEmail: "[email removed]",
-
-  // FormSubmit's alias for notifyEmail (given after activation), so the
-  // automatic emails don't put the address in the request.
+  // FormSubmit's code for the office inbox (given after activation). Completion
+  // records and caregiver questions are emailed there. The address itself is
+  // deliberately not in this site's code.
   formSubmitId: "d344e0396b860ca96cb4112c22e5b833",
 
   // Web app URL of the Google Apps Script that adds a row to the completions

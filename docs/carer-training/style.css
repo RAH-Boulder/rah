@@ -115,10 +115,16 @@ input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 .doc-facts { border-collapse: collapse; width: 100%; margin: 18px 0 26px; font-size: .95rem; }
 .doc-facts th, .doc-facts td { text-align: left; padding: 7px 10px; border-bottom: 1px solid #e3ddd3; vertical-align: top; }
 .doc-facts th { width: 32%; color: #5b6573; font-weight: 500; }
-.doc-sig { max-width: 340px; }
+.signed-doc.pdf-mode { border: 0; border-radius: 0; padding: 0; max-width: none; font-size: 15px; }
+.signed-doc.pdf-mode .doc-facts th, .signed-doc.pdf-mode .doc-facts td { padding: 5px 10px; }
+.signed-doc.pdf-mode .doc-facts { margin: 12px 0 22px; }
+.doc-sig-row { display: flex; gap: 32px; align-items: flex-end; }
+.doc-sig { flex: 1 1 60%; max-width: 340px; }
+.doc-sig-date { flex: 1 1 35%; max-width: 220px; }
+.doc-sig-value { margin: 0; padding: 0 4px 6px; border-bottom: 1px solid #1f2a37; color: #1f2a37; font-size: 1.05rem; }
 @media (max-width: 600px) { .signed-doc { padding: 24px 18px; } }
 .doc-sig-name { font-family: "Dancing Script", "Brush Script MT", cursive; font-size: 2rem; margin: 0; padding: 0 4px 2px; border-bottom: 1px solid #1f2a37; color: #1f2a37; }
-.doc-sig p:not(.doc-sig-name) { margin: 4px 0 0; color: #5b6573; font-size: .85rem; }
+.doc-sig p:not(.doc-sig-name):not(.doc-sig-value) { margin: 4px 0 0; color: #5b6573; font-size: .85rem; }
 
 .status { font-weight: 500; }
 .status.ok { color: var(--good); }
@@ -134,6 +140,11 @@ input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 .check { display: flex; gap: 10px; align-items: flex-start; margin: 0 0 16px; font-weight: 600; cursor: pointer; }
 .check input { margin-top: 5px; width: 18px; height: 18px; accent-color: var(--accent); }
 .sig-field { margin-top: 14px; }
+.sig-row { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; }
+@media (max-width: 600px) { .sig-row { grid-template-columns: 1fr; } }
+.span-2 { grid-column: 1 / -1; }
+#step-sign .who { margin-top: 6px; }
+input[readonly] { color: var(--muted); }
 input.sig-input { font-family: "Dancing Script", "Brush Script MT", cursive; font-size: 1.6rem; padding: 6px 12px; }
 .result.pass { background: var(--good-bg); margin: 0 0 18px; }
 textarea {

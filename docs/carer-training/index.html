@@ -45,10 +45,13 @@
       <form id="quiz-form" novalidate>
         <fieldset class="who">
           <legend>About you</legend>
-          <label>Full name
-            <input type="text" id="name" name="name" autocomplete="name" required>
+          <label>First name
+            <input type="text" id="first" name="first" autocomplete="given-name" required>
           </label>
-          <label>Email
+          <label>Last name
+            <input type="text" id="last" name="last" autocomplete="family-name" required>
+          </label>
+          <label class="span-2">Email
             <input type="email" id="email" name="email" autocomplete="email" required>
           </label>
         </fieldset>
@@ -82,13 +85,24 @@
           <input type="checkbox" id="agree">
           <span>I have read this form and agree to it.</span>
         </label>
-        <label>Employee printed name
-          <input type="text" id="sign-name" autocomplete="name" required>
-        </label>
-        <label class="sig-field">Employee signature — type your full name to sign
-          <input type="text" id="sign-sig" class="sig-input" autocomplete="off" required>
-        </label>
-        <p class="muted small">Typing your name here counts as your signature.</p>
+        <fieldset class="who">
+          <legend>Employee printed name</legend>
+          <label>First name
+            <input type="text" id="sign-first" autocomplete="given-name" required>
+          </label>
+          <label>Last name
+            <input type="text" id="sign-last" autocomplete="family-name" required>
+          </label>
+        </fieldset>
+        <div class="sig-row">
+          <label class="sig-field">Employee signature — type your full name to sign
+            <input type="text" id="sign-sig" class="sig-input" autocomplete="off" required>
+          </label>
+          <label class="sig-field">Date
+            <input type="text" id="sign-date" readonly>
+          </label>
+        </div>
+        <p class="muted small">Typing your name here counts as your signature. The date is today's date.</p>
         <p id="sign-error" class="error" role="alert" hidden></p>
         <div class="actions">
           <button type="submit" class="btn primary">Sign and submit</button>
@@ -101,6 +115,7 @@
       <div class="card notice">
         <h2>All done — thank you!</h2>
         <p>Your training is complete and your form is signed. Download or print a copy for your records.</p>
+        <p id="drive-status" class="status" hidden></p>
         <p id="notify-status" class="status"></p>
         <div class="actions">
           <button class="btn primary" id="download-pdf">Download signed form (PDF)</button>
@@ -122,9 +137,15 @@
             <tr><th>Date signed</th><td id="doc-date"></td></tr>
             <tr><th>Record ID</th><td id="doc-id"></td></tr>
           </table>
-          <div class="doc-sig">
-            <p class="doc-sig-name" id="doc-sig-text"></p>
-            <p>Employee signature</p>
+          <div class="doc-sig-row">
+            <div class="doc-sig">
+              <p class="doc-sig-name" id="doc-sig-text"></p>
+              <p>Employee signature</p>
+            </div>
+            <div class="doc-sig doc-sig-date">
+              <p class="doc-sig-value" id="doc-sig-date"></p>
+              <p>Date</p>
+            </div>
           </div>
         </div>
       </div>

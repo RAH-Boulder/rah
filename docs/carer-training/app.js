@@ -59,6 +59,69 @@
     qBox.append(fs);
   });
 
+  function longDate(d) {
+    return d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+  }
+
+  // "First Last 2026" — used for the downloaded PDF and the copy saved to Google Drive.
+  function fileBase() {
+    const clean = (t) => t.replace(/[^\p{L}\p{N} '_-]/gu, "").replace(/\s+/g, " ").trim();
+    return `${clean(result.first)} ${clean(result.last)} ${result.date.getFullYear()}`;
+  }
+
+  // Builds the PDF with the compact .pdf-mode styles (no on-screen border or
+  // padding, since the PDF has its own margins) so it fits on one letter page.
+  function withPdfMode(work) {
+    const el = $("signed-doc");
+    el.classList.add("pdf-mode");
+    return Promise.resolve(work()).finally(() => el.classList.remove("pdf-mode"));
+  }
+
+  function signedPdf() {
+    return html2pdf()
+      .set({
+        margin: [12, 12, 12, 12],
+        filename: `${fileBase()}.pdf`,
+        image: { type: "jpeg", quality: 0.96 },
+        html2canvas: { scale: 2, backgroundColor: "#ffffff" },
+        // Never split the signature lines across pages.
+        pagebreak: { mode: "css", avoid: [".doc-sig-row", ".doc-facts tr"] },
+        jsPDF: { unit: "mm", format: "letter", orientation: "portrait" }
+      })
+      .from($("signed-doc"));
+  }
+
+  // Saves the signed PDF to the Google Drive folder through the Apps Script in
+  // apps-script/SaveSignedForm.gs. Does nothing until driveUploadUrl is set.
+  function saveToDrive() {
+    const status = $("drive-status");
+    if (!cfg.driveUploadUrl || !window.html2pdf) return;
+    status.hidden = false;
+    status.className = "status warn";
+    status.textContent = "Saving your signed form to the office's records…";
+    // Wait for fonts and for show()'s smooth scroll to finish; capturing the
+    // page mid-scroll produces a blank PDF.
+    const settled = new Promise((resolve) => setTimeout(resolve, 1200));
+    Promise.all([settled, document.fonts ? document.fonts.ready : null])
+      .then(() => withPdfMode(() => signedPdf().outputPdf("datauristring")))
+      .then((uri) => fetch(cfg.driveUploadUrl, {
+        method: "POST",
+        // text/plain keeps this a "simple" request, which Apps Script accepts.
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ fileName: fileBase(), pdf: uri.slice(uri.indexOf(",") + 1) })
+      }))
+      .then((r) => r.json())
+      .then((res) => {
+        if (!res.ok) throw new Error(res.error || "not saved");
+        status.className = "status ok";
+        status.textContent = "✓ Your signed form was saved to the office's records.";
+      })
+      .catch(() => {
+        status.className = "status warn";
+        status.textContent = "We couldn't save your signed form automatically — please download it and email it to the office using the button below.";
+      });
+  }
+
   function postForm(data) {
     return fetch(formSubmitUrl, {
       method: "POST",
@@ -94,14 +157,15 @@
   $("quiz-form").addEventListener("submit", (e) => {
     e.preventDefault();
     const err = $("form-error");
-    const name = $("name").value.trim();
+    const first = $("first").value.trim();
+    const last = $("last").value.trim();
     const email = $("email").value.trim();
     document.querySelectorAll(".question").forEach((q) => q.classList.remove("wrong", "missing"));
 
-    if (!name || !/^\S+@\S+\.\S+$/.test(email)) {
-      err.textContent = "Please enter your full name and a valid email address.";
+    if (!first || !last || !/^\S+@\S+\.\S+$/.test(email)) {
+      err.textContent = "Please enter your first name, last name and a valid email address.";
       err.hidden = false;
-      (name ? $("email") : $("name")).focus();
+      $(!first ? "first" : !last ? "last" : "email").focus();
       return;
     }
     const answers = cfg.questions.map((_, i) => {
@@ -133,10 +197,12 @@
     }
 
     document.querySelectorAll(".question").forEach((q) => q.classList.remove("wrong"));
-    result = { name, email, score };
+    result = { email, score };
     $("pass-score").textContent = `${score} of ${total} correct`;
-    $("sign-name").value = name;
-    if (!$("ask-name").value) $("ask-name").value = name;
+    $("sign-first").value = first;
+    $("sign-last").value = last;
+    $("sign-date").value = longDate(new Date());
+    if (!$("ask-name").value) $("ask-name").value = `${first} ${last}`;
     if (!$("ask-email").value) $("ask-email").value = email;
     show("sign");
   });
@@ -145,21 +211,24 @@
   $("sign-form").addEventListener("submit", (e) => {
     e.preventDefault();
     const err = $("sign-error");
-    const signedName = $("sign-name").value.trim();
+    const first = $("sign-first").value.trim();
+    const last = $("sign-last").value.trim();
     const signature = $("sign-sig").value.trim();
     let msg = "";
     if (!$("agree").checked) msg = "Please tick the box to confirm you agree.";
-    else if (!signedName) msg = "Please type your printed name.";
+    else if (!first || !last) msg = "Please type your first and last name.";
     else if (!signature) msg = "Please type your full name in the signature box to sign.";
     if (msg) {
       err.textContent = msg;
       err.hidden = false;
-      $(!$("agree").checked ? "agree" : !signedName ? "sign-name" : "sign-sig").focus();
+      $(!$("agree").checked ? "agree" : !first ? "sign-first" : !last ? "sign-last" : "sign-sig").focus();
       return;
     }
     err.hidden = true;
 
-    result.signedName = signedName;
+    result.first = first;
+    result.last = last;
+    result.signedName = `${first} ${last}`;
     result.signature = signature;
     result.date = new Date();
     result.id = "CT-" + Date.now().toString(36).toUpperCase().slice(-6) +
@@ -169,7 +238,7 @@
 
   // ----- Done -----
   function showDone() {
-    const dateText = result.date.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+    const dateText = longDate(result.date);
     const scoreText = `${result.score}/${total}`;
     $("doc-org").textContent = cfg.form.org;
     $("doc-title").textContent = cfg.form.title;
@@ -182,6 +251,7 @@
     $("doc-date").textContent = dateText;
     $("doc-id").textContent = result.id;
     $("doc-sig-text").textContent = result.signature;
+    $("doc-sig-date").textContent = dateText;
 
     const subject = `Training completed and form signed: ${result.signedName}`;
     const body =
@@ -215,6 +285,7 @@ ${result.signedName}`;
     };
 
     show("done");
+    saveToDrive();
 
     const status = $("notify-status");
     if (!cfg.autoSend) { status.hidden = true; return; }
@@ -222,7 +293,8 @@ ${result.signedName}`;
     status.textContent = "Sending your completion record to the office…";
     postForm({
       _subject: subject,
-      Name: result.signedName,
+      "First name": result.first,
+      "Last name": result.last,
       Signature: result.signature,
       Email: result.email,
       Score: scoreText,
@@ -250,17 +322,7 @@ ${result.signedName}`;
     const label = btn.textContent;
     btn.disabled = true;
     btn.textContent = "Preparing PDF…";
-    const fileName = `Signed training form - ${result.signedName.replace(/[^\p{L}\p{N} _-]/gu, "")}.pdf`;
-    html2pdf()
-      .set({
-        margin: [12, 12, 12, 12],
-        filename: fileName,
-        image: { type: "jpeg", quality: 0.96 },
-        html2canvas: { scale: 2, backgroundColor: "#ffffff" },
-        jsPDF: { unit: "mm", format: "letter", orientation: "portrait" }
-      })
-      .from($("signed-doc"))
-      .save()
+    withPdfMode(() => signedPdf().save())
       .catch(() => window.print())
       .finally(() => { btn.disabled = false; btn.textContent = label; });
   };

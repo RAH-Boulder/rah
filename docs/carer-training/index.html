@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Annual Care Training</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <h1 id="page-title">Annual In-Home Care Training</h1>
+      <ol class="steps" aria-label="Progress">
+        <li data-step="video" class="active"><span>1</span> Watch</li>
+        <li data-step="quiz"><span>2</span> Quiz</li>
+        <li data-step="cert"><span>3</span> Certificate</li>
+      </ol>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <!-- Step 1: video -->
+    <section id="step-video" class="card">
+      <h2>1. Watch the training video</h2>
+      <p>Watch the whole video before you take the quiz. You need
+        <strong id="pass-mark-text">8 of 10</strong> correct answers to pass.</p>
+      <div class="video">
+        <iframe id="video-frame" title="Training video" allow="autoplay; fullscreen" allowfullscreen></iframe>
+      </div>
+      <p class="muted small">Video not playing?
+        <a id="video-link" target="_blank" rel="noopener">Open it in Google Drive</a>.</p>
+      <div class="actions">
+        <button class="btn primary" id="to-quiz">I've watched the video — start the quiz</button>
+      </div>
+    </section>
+
+    <!-- Step 2: quiz -->
+    <section id="step-quiz" class="card" hidden>
+      <h2>2. Quiz</h2>
+      <form id="quiz-form" novalidate>
+        <fieldset class="who">
+          <legend>About you</legend>
+          <label>Full name
+            <input type="text" id="name" name="name" autocomplete="name" required>
+          </label>
+          <label>Email
+            <input type="email" id="email" name="email" autocomplete="email" required>
+          </label>
+        </fieldset>
+        <div id="questions"></div>
+        <p id="form-error" class="error" role="alert" hidden></p>
+        <div class="actions">
+          <button type="button" class="btn" id="back-to-video">Back to the video</button>
+          <button type="submit" class="btn primary">Submit answers</button>
+        </div>
+      </form>
+      <div id="fail-box" class="result fail" hidden>
+        <h3>Not quite — <span id="fail-score"></span></h3>
+        <p>You need <span id="fail-need"></span> correct answers to pass. The questions you
+          missed are marked below. Review the video if you need to and try again.</p>
+        <div class="actions">
+          <button class="btn primary" id="retry">Try again</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Step 3: certificate -->
+    <section id="step-cert" hidden>
+      <div class="card notice">
+        <h2>Congratulations — you passed!</h2>
+        <p>Your score: <strong id="pass-score"></strong>. Your training is complete.
+          Download or print your certificate below.</p>
+        <div class="actions">
+          <button class="btn primary" id="download-pdf">Download PDF</button>
+          <button class="btn" id="print">Print</button>
+        </div>
+      </div>
+
+      <div class="cert-holder">
+        <div id="certificate" class="certificate">
+          <div class="cert-inner">
+            <p class="cert-kicker">Certificate of Completion</p>
+            <p class="cert-line">This certifies that</p>
+            <p class="cert-name" id="cert-name"></p>
+            <p class="cert-line">has completed the</p>
+            <p class="cert-course" id="cert-course"></p>
+            <p class="cert-line">and passed the final quiz with a score of <strong id="cert-score"></strong>.</p>
+            <div class="cert-foot">
+              <div><span id="cert-date"></span><small>Date</small></div>
+              <div class="seal" aria-hidden="true">✓</div>
+              <div><span id="cert-id"></span><small>Certificate ID</small></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="notify-card">
+        <h2>Let Shana know</h2>
+        <p id="notify-status" class="status"></p>
+        <p>Please also send this email to <a id="notify-addr"></a> so there's a record of your
+          completion. Attach the PDF certificate if you can.</p>
+        <div class="email-box">
+          <p><strong>To:</strong> <span id="mail-to"></span></p>
+          <p><strong>Subject:</strong> <span id="mail-subject"></span></p>
+          <pre id="mail-body"></pre>
+        </div>
+        <div class="actions">
+          <a class="btn primary" id="mailto">Open in my email app</a>
+          <button class="btn" id="copy-mail">Copy email text</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

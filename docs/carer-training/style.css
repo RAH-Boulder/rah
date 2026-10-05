@@ -1,0 +1,149 @@
+:root {
+  --bg: #f6f3ee;
+  --card: #ffffff;
+  --ink: #1f2a37;
+  --muted: #5b6573;
+  --line: #e3ddd3;
+  --accent: #b5303a;
+  --accent-ink: #ffffff;
+  --good: #1f7a4d;
+  --good-bg: #e7f4ec;
+  --bad: #a3262f;
+  --bad-bg: #fbeaea;
+  --gold: #b08d3c;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15191f;
+    --card: #1e242c;
+    --ink: #e8ecf1;
+    --muted: #a3adba;
+    --line: #313a45;
+    --accent: #e0606a;
+    --accent-ink: #15191f;
+    --good: #6cd19d;
+    --good-bg: #183026;
+    --bad: #f08a90;
+    --bad-bg: #3a1f22;
+  }
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.55 Inter, system-ui, sans-serif;
+}
+.wrap { max-width: 860px; margin: 0 auto; padding: 0 16px; }
+a { color: var(--accent); }
+
+.site-header { padding: 28px 0 8px; }
+.site-header h1 { font-family: "Playfair Display", Georgia, serif; font-size: 1.9rem; margin: 0 0 14px; }
+.steps { list-style: none; display: flex; gap: 8px; padding: 0; margin: 0 0 8px; flex-wrap: wrap; }
+.steps li { display: flex; align-items: center; gap: 6px; color: var(--muted); font-weight: 500; font-size: .95rem; }
+.steps li + li::before { content: ""; width: 24px; height: 1px; background: var(--line); margin-right: 2px; }
+.steps span {
+  display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%;
+  border: 1px solid var(--line); font-size: .85rem;
+}
+.steps li.active { color: var(--ink); }
+.steps li.active span { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.steps li.done span { background: var(--good); border-color: var(--good); color: #fff; }
+
+.card {
+  background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+  padding: 24px; margin: 18px 0;
+}
+.card h2 { margin: 0 0 8px; font-size: 1.35rem; }
+.muted { color: var(--muted); }
+.small { font-size: .9rem; }
+
+.video { position: relative; aspect-ratio: 16 / 9; background: #000; border-radius: 10px; overflow: hidden; margin: 14px 0 6px; }
+.video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+
+.actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.btn {
+  appearance: none; border: 1px solid var(--line); background: transparent; color: var(--ink);
+  padding: 11px 18px; border-radius: 10px; font: inherit; font-weight: 600; cursor: pointer;
+  text-decoration: none; display: inline-block;
+}
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn:disabled { opacity: .6; cursor: wait; }
+
+fieldset { border: 0; padding: 0; margin: 0; }
+.who { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 8px; }
+.who legend { font-weight: 600; margin-bottom: 8px; }
+@media (max-width: 600px) { .who { grid-template-columns: 1fr; } }
+label { display: block; font-weight: 500; font-size: .95rem; }
+input[type=text], input[type=email] {
+  display: block; width: 100%; margin-top: 4px; padding: 10px 12px; font: inherit;
+  color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
+}
+input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.question { border-top: 1px solid var(--line); padding: 18px 0 6px; }
+.question legend { font-weight: 600; margin-bottom: 10px; }
+.question .num { color: var(--accent); margin-right: 4px; }
+.option {
+  display: flex; gap: 10px; align-items: flex-start; padding: 9px 12px; margin: 6px 0;
+  border: 1px solid var(--line); border-radius: 8px; font-weight: 400; cursor: pointer;
+}
+.option:hover { border-color: var(--muted); }
+.option input { margin-top: 4px; accent-color: var(--accent); }
+.question.wrong { background: var(--bad-bg); margin: 0 -24px; padding-left: 24px; padding-right: 24px; }
+.question.wrong legend::after { content: " — incorrect"; color: var(--bad); font-weight: 500; }
+.question.missing legend::after { content: " — please answer"; color: var(--bad); font-weight: 500; }
+
+.error { color: var(--bad); font-weight: 500; }
+.result { border-radius: 10px; padding: 16px 18px; margin-top: 18px; }
+.result.fail { background: var(--bad-bg); }
+.result h3 { margin: 0 0 6px; }
+.notice { border-color: var(--good); background: var(--good-bg); }
+
+/* Certificate — fixed light colours so it looks the same on screen, in print and in the PDF */
+.cert-holder { overflow-x: auto; margin: 18px 0; }
+.certificate {
+  width: 100%; max-width: 860px; aspect-ratio: 1.414 / 1; min-width: 560px;
+  background: #fffdf8; color: #1f2a37; padding: 18px;
+  border: 1px solid #e3ddd3; border-radius: 6px;
+}
+.cert-inner {
+  height: 100%; border: 3px double var(--gold); padding: 4% 6%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+}
+.cert-kicker {
+  font-family: "Playfair Display", Georgia, serif; font-size: 2.1rem; margin: 0 0 4%;
+  color: #b5303a; letter-spacing: .02em;
+}
+.cert-line { margin: 0; color: #5b6573; font-size: 1.05rem; }
+.cert-name {
+  font-family: "Playfair Display", Georgia, serif; font-size: 2.4rem; margin: 2% 0;
+  border-bottom: 1px solid var(--gold); padding: 0 24px 4px; min-width: 60%;
+}
+.cert-course { font-size: 1.3rem; font-weight: 600; margin: 1% 0 2%; }
+.cert-foot { display: flex; align-items: center; justify-content: space-between; width: 100%; margin-top: 6%; }
+.cert-foot > div:not(.seal) { min-width: 30%; border-top: 1px solid #c9c2b5; padding-top: 6px; }
+.cert-foot small { display: block; color: #5b6573; font-size: .8rem; }
+.seal {
+  width: 70px; height: 70px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--gold); color: #fff; font-size: 2rem; box-shadow: 0 0 0 4px #fffdf8, 0 0 0 6px var(--gold);
+}
+
+.status { font-weight: 500; }
+.status.ok { color: var(--good); }
+.status.warn { color: var(--muted); }
+.email-box { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; }
+.email-box p { margin: 4px 0; }
+.email-box pre { white-space: pre-wrap; font: inherit; margin: 10px 0 0; }
+
+@media print {
+  @page { size: A4 landscape; margin: 0; }
+  body { background: #fff; }
+  .site-header, .card, #step-video, #step-quiz { display: none !important; }
+  .wrap { max-width: none; padding: 0; }
+  .cert-holder { margin: 0; overflow: visible; }
+  .certificate { border: 0; border-radius: 0; width: 297mm; height: 210mm; max-width: none; min-width: 0; aspect-ratio: auto; padding: 12mm; }
+}

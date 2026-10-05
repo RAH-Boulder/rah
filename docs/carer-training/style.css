@@ -197,3 +197,15 @@ textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 .sign-callout strong { display: block; margin-top: 6px; color: var(--bad); font-weight: 700; }
 @media (max-width: 600px) { .sign-callout { font-size: 1.3rem; } }
 .check input:focus { outline-color: currentColor; }
+
+/* Missed-question review, shown after a pass */
+.review { border: 1px solid var(--line); border-left: 5px solid var(--gold); border-radius: 10px; padding: 16px 18px; margin: 0 0 18px; }
+.review h3 { margin: 0 0 4px; font-size: 1.15rem; }
+.review > p { margin: 0 0 10px; color: var(--muted); }
+.review-list { margin: 0; padding-left: 0; list-style: none; }
+.review-list li { border-top: 1px solid var(--line); padding: 10px 0; }
+.review-list p { margin: 2px 0; }
+.review-q { font-weight: 600; }
+.review-yours { color: var(--bad); }
+.review-right { color: var(--good); font-weight: 600; }
+.review-yours span, .review-right span { font-weight: 700; }

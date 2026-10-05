@@ -4,7 +4,7 @@
   // Must match data-version in index.html. Bump both (and the ?v= on the
   // style/script links) on every change: right after an update, a browser can
   // otherwise pair a cached old page with this new script, which breaks the quiz.
-  const VERSION = "2026-10-05.15";
+  const VERSION = "2026-10-05.16";
   if (document.documentElement.dataset.version !== VERSION) {
     // Load the page again under a new URL so the browser can't use its cached copy.
     const key = "carer-training-reloaded-for";
@@ -307,6 +307,7 @@
     document.querySelectorAll(".question").forEach((q) => q.classList.remove("wrong"));
     result = { email, score };
     $("pass-score").textContent = `${score} of ${total} correct`;
+    showReview(answers);
     $("sign-first").value = first;
     $("sign-last").value = last;
     $("sign-date").value = longDate(new Date());
@@ -314,6 +315,29 @@
     if (!$("ask-email").value) $("ask-email").value = email;
     show("sign");
   });
+
+  // After a pass, list each missed question with the caregiver's answer and
+  // the correct one. (Correct answers are never shown to someone who failed.)
+  function showReview(answers) {
+    const items = [];
+    cfg.questions.forEach((item, i) => {
+      if (answers[i] === item.answer) return;
+      const li = document.createElement("li");
+      const q = document.createElement("p");
+      q.className = "review-q";
+      q.textContent = `Question ${i + 1}: ${item.q}`;
+      const yours = document.createElement("p");
+      yours.className = "review-yours";
+      yours.append(Object.assign(document.createElement("span"), { textContent: "Your answer: " }), item.options[answers[i]]);
+      const right = document.createElement("p");
+      right.className = "review-right";
+      right.append(Object.assign(document.createElement("span"), { textContent: "Correct answer: " }), item.options[item.answer]);
+      li.append(q, yours, right);
+      items.push(li);
+    });
+    $("review-list").replaceChildren(...items);
+    $("review").hidden = items.length === 0;
+  }
 
   // ----- Sign -----
   $("sign-form").addEventListener("submit", (e) => {

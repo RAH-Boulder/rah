@@ -81,7 +81,6 @@
       li.classList.toggle("done", idx < order.indexOf(step));
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
-    if (step === "sign") sizePad();
   }
   $("to-quiz").onclick = () => show("quiz");
   $("back-to-video").onclick = () => show("video");
@@ -142,71 +141,26 @@
     show("sign");
   });
 
-  // ----- Signature pad -----
-  const pad = $("sig-pad");
-  const ctx = pad.getContext("2d");
-  let drawing = false;
-  let hasInk = false;
-
-  function sizePad() {
-    const ratio = window.devicePixelRatio || 1;
-    const w = pad.clientWidth;
-    const h = pad.clientHeight;
-    if (!w || (pad.width === Math.round(w * ratio) && pad.height === Math.round(h * ratio))) return;
-    pad.width = Math.round(w * ratio);
-    pad.height = Math.round(h * ratio);
-    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-    ctx.lineWidth = 2.2;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.strokeStyle = "#1f2a37";
-    hasInk = false;
-  }
-  window.addEventListener("resize", () => { if (!hasInk) sizePad(); });
-
-  function point(e) {
-    const r = pad.getBoundingClientRect();
-    return { x: e.clientX - r.left, y: e.clientY - r.top };
-  }
-  pad.addEventListener("pointerdown", (e) => {
-    e.preventDefault();
-    pad.setPointerCapture(e.pointerId);
-    drawing = true;
-    const p = point(e);
-    ctx.beginPath();
-    ctx.moveTo(p.x, p.y);
-    ctx.lineTo(p.x + 0.01, p.y);
-    ctx.stroke();
-    hasInk = true;
-  });
-  pad.addEventListener("pointermove", (e) => {
-    if (!drawing) return;
-    const p = point(e);
-    ctx.lineTo(p.x, p.y);
-    ctx.stroke();
-  });
-  ["pointerup", "pointercancel", "pointerleave"].forEach((t) =>
-    pad.addEventListener(t, () => (drawing = false))
-  );
-  $("sig-clear").onclick = () => {
-    ctx.clearRect(0, 0, pad.width, pad.height);
-    hasInk = false;
-  };
-
   // ----- Sign -----
   $("sign-form").addEventListener("submit", (e) => {
     e.preventDefault();
     const err = $("sign-error");
     const signedName = $("sign-name").value.trim();
+    const signature = $("sign-sig").value.trim();
     let msg = "";
     if (!$("agree").checked) msg = "Please tick the box to confirm you agree.";
-    else if (!signedName) msg = "Please type your full name.";
-    else if (!hasInk) msg = "Please draw your signature in the box.";
-    if (msg) { err.textContent = msg; err.hidden = false; return; }
+    else if (!signedName) msg = "Please type your printed name.";
+    else if (!signature) msg = "Please type your full name in the signature box to sign.";
+    if (msg) {
+      err.textContent = msg;
+      err.hidden = false;
+      $(!$("agree").checked ? "agree" : !signedName ? "sign-name" : "sign-sig").focus();
+      return;
+    }
     err.hidden = true;
 
     result.signedName = signedName;
-    result.signature = pad.toDataURL("image/png");
+    result.signature = signature;
     result.date = new Date();
     result.id = "CT-" + Date.now().toString(36).toUpperCase().slice(-6) +
       Math.random().toString(36).slice(2, 5).toUpperCase();
@@ -227,7 +181,7 @@
     $("doc-score").textContent = `${scoreText} (pass mark ${passMark}/${total})`;
     $("doc-date").textContent = dateText;
     $("doc-id").textContent = result.id;
-    $("doc-sig-img").src = result.signature;
+    $("doc-sig-text").textContent = result.signature;
 
     const subject = `Training completed and form signed: ${result.signedName}`;
     const body =
@@ -269,6 +223,7 @@ ${result.signedName}`;
     postForm({
       _subject: subject,
       Name: result.signedName,
+      Signature: result.signature,
       Email: result.email,
       Score: scoreText,
       "Date signed": dateText,

@@ -117,8 +117,8 @@ input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 .doc-facts th { width: 32%; color: #5b6573; font-weight: 500; }
 .doc-sig { max-width: 340px; }
 @media (max-width: 600px) { .signed-doc { padding: 24px 18px; } }
-.doc-sig img { display: block; width: 100%; height: auto; border-bottom: 1px solid #1f2a37; }
-.doc-sig p { margin: 4px 0 0; color: #5b6573; font-size: .85rem; }
+.doc-sig-name { font-family: "Dancing Script", "Brush Script MT", cursive; font-size: 2rem; margin: 0; padding: 0 4px 2px; border-bottom: 1px solid #1f2a37; color: #1f2a37; }
+.doc-sig p:not(.doc-sig-name) { margin: 4px 0 0; color: #5b6573; font-size: .85rem; }
 
 .status { font-weight: 500; }
 .status.ok { color: var(--good); }
@@ -133,12 +133,8 @@ input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 .form-text p:last-child { margin: 0; }
 .check { display: flex; gap: 10px; align-items: flex-start; margin: 0 0 16px; font-weight: 600; cursor: pointer; }
 .check input { margin-top: 5px; width: 18px; height: 18px; accent-color: var(--accent); }
-.sig-label { display: flex; justify-content: space-between; align-items: baseline; margin: 16px 0 4px; font-weight: 500; font-size: .95rem; }
-.sig-pad {
-  display: block; width: 100%; height: 170px; background: #ffffff; touch-action: none; cursor: crosshair;
-  border: 1px solid var(--line); border-radius: 8px;
-}
-.link-btn { appearance: none; border: 0; background: none; color: var(--accent); font: inherit; cursor: pointer; padding: 0; text-decoration: underline; }
+.sig-field { margin-top: 14px; }
+input.sig-input { font-family: "Dancing Script", "Brush Script MT", cursive; font-size: 1.6rem; padding: 6px 12px; }
 .result.pass { background: var(--good-bg); margin: 0 0 18px; }
 textarea {
   display: block; width: 100%; margin-top: 4px; padding: 10px 12px; font: inherit; resize: vertical;

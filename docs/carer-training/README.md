@@ -4,7 +4,7 @@ A small static site: a caregiver
 
 1. watches the training video,
 2. takes a 14-question quiz (must get 80% — 12 of 14 — to pass; answers are never shown),
-3. reads and signs the Annual Caregiver Training Acknowledgement (tick box, typed name, drawn signature),
+3. reads and signs the Annual Caregiver Training Acknowledgement (tick box, printed name, typed signature),
 4. gets the signed form to download as PDF or print.
 
 A "Have a question?" box at the bottom of every step sends questions to `notifyEmail`.

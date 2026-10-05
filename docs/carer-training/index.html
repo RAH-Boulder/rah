@@ -6,7 +6,7 @@
   <title>Annual Care Training</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -82,15 +82,13 @@
           <input type="checkbox" id="agree">
           <span>I have read this form and agree to it.</span>
         </label>
-        <label>Type your full name
+        <label>Employee printed name
           <input type="text" id="sign-name" autocomplete="name" required>
         </label>
-        <div class="sig-label">
-          <span>Signature</span>
-          <button type="button" class="link-btn" id="sig-clear">Clear</button>
-        </div>
-        <canvas id="sig-pad" class="sig-pad" aria-label="Signature pad. Draw your signature with a mouse or finger."></canvas>
-        <p class="muted small">Draw your signature with your mouse or finger.</p>
+        <label class="sig-field">Employee signature — type your full name to sign
+          <input type="text" id="sign-sig" class="sig-input" autocomplete="off" required>
+        </label>
+        <p class="muted small">Typing your name here counts as your signature.</p>
         <p id="sign-error" class="error" role="alert" hidden></p>
         <div class="actions">
           <button type="submit" class="btn primary">Sign and submit</button>
@@ -116,7 +114,7 @@
           <h2 class="doc-title" id="doc-title"></h2>
           <div class="doc-body" id="doc-body"></div>
           <table class="doc-facts">
-            <tr><th>Name</th><td id="doc-name"></td></tr>
+            <tr><th>Employee printed name</th><td id="doc-name"></td></tr>
             <tr><th>Email</th><td id="doc-email"></td></tr>
             <tr><th>Training</th><td id="doc-course"></td></tr>
             <tr><th>Training length</th><td id="doc-length"></td></tr>
@@ -125,8 +123,8 @@
             <tr><th>Record ID</th><td id="doc-id"></td></tr>
           </table>
           <div class="doc-sig">
-            <img id="doc-sig-img" alt="Signature">
-            <p>Signature</p>
+            <p class="doc-sig-name" id="doc-sig-text"></p>
+            <p>Employee signature</p>
           </div>
         </div>
       </div>

@@ -103,34 +103,22 @@ input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 .result h3 { margin: 0 0 6px; }
 .notice { border-color: var(--good); background: var(--good-bg); }
 
-/* Certificate — fixed light colours so it looks the same on screen, in print and in the PDF */
-.cert-holder { overflow-x: auto; margin: 18px 0; }
-.certificate {
-  width: 100%; max-width: 860px; aspect-ratio: 1.414 / 1; min-width: 560px;
-  background: #fffdf8; color: #1f2a37; padding: 18px;
-  border: 1px solid #e3ddd3; border-radius: 6px;
+/* Signed form — fixed light colours so it looks the same on screen, in print and in the PDF */
+.doc-holder { margin: 18px 0; }
+.signed-doc {
+  background: #ffffff; color: #1f2a37; padding: 40px 44px;
+  border: 1px solid #e3ddd3; border-radius: 6px; max-width: 760px; margin: 0 auto;
 }
-.cert-inner {
-  height: 100%; border: 3px double var(--gold); padding: 4% 6%;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
-}
-.cert-kicker {
-  font-family: "Playfair Display", Georgia, serif; font-size: 2.1rem; margin: 0 0 4%;
-  color: #b5303a; letter-spacing: .02em;
-}
-.cert-line { margin: 0; color: #5b6573; font-size: 1.05rem; }
-.cert-name {
-  font-family: "Playfair Display", Georgia, serif; font-size: 2.4rem; margin: 2% 0;
-  border-bottom: 1px solid var(--gold); padding: 0 24px 4px; min-width: 60%;
-}
-.cert-course { font-size: 1.3rem; font-weight: 600; margin: 1% 0 2%; }
-.cert-foot { display: flex; align-items: center; justify-content: space-between; width: 100%; margin-top: 6%; }
-.cert-foot > div:not(.seal) { min-width: 30%; border-top: 1px solid #c9c2b5; padding-top: 6px; }
-.cert-foot small { display: block; color: #5b6573; font-size: .8rem; }
-.seal {
-  width: 70px; height: 70px; border-radius: 50%; display: grid; place-items: center;
-  background: var(--gold); color: #fff; font-size: 2rem; box-shadow: 0 0 0 4px #fffdf8, 0 0 0 6px var(--gold);
-}
+.doc-org { margin: 0; color: #b5303a; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; font-size: .85rem; }
+.doc-title { font-family: "Playfair Display", Georgia, serif; font-size: 1.7rem; margin: 6px 0 18px; }
+.doc-body p { margin: 0 0 12px; }
+.doc-facts { border-collapse: collapse; width: 100%; margin: 18px 0 26px; font-size: .95rem; }
+.doc-facts th, .doc-facts td { text-align: left; padding: 7px 10px; border-bottom: 1px solid #e3ddd3; vertical-align: top; }
+.doc-facts th { width: 32%; color: #5b6573; font-weight: 500; }
+.doc-sig { max-width: 340px; }
+@media (max-width: 600px) { .signed-doc { padding: 24px 18px; } }
+.doc-sig img { display: block; width: 100%; height: auto; border-bottom: 1px solid #1f2a37; }
+.doc-sig p { margin: 4px 0 0; color: #5b6573; font-size: .85rem; }
 
 .status { font-weight: 500; }
 .status.ok { color: var(--good); }
@@ -139,11 +127,32 @@ input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 .email-box p { margin: 4px 0; }
 .email-box pre { white-space: pre-wrap; font: inherit; margin: 10px 0 0; }
 
+
+.form-text { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 14px 18px; margin: 10px 0 18px; }
+.form-text p { margin: 0 0 10px; }
+.form-text p:last-child { margin: 0; }
+.check { display: flex; gap: 10px; align-items: flex-start; margin: 0 0 16px; font-weight: 600; cursor: pointer; }
+.check input { margin-top: 5px; width: 18px; height: 18px; accent-color: var(--accent); }
+.sig-label { display: flex; justify-content: space-between; align-items: baseline; margin: 16px 0 4px; font-weight: 500; font-size: .95rem; }
+.sig-pad {
+  display: block; width: 100%; height: 170px; background: #ffffff; touch-action: none; cursor: crosshair;
+  border: 1px solid var(--line); border-radius: 8px;
+}
+.link-btn { appearance: none; border: 0; background: none; color: var(--accent); font: inherit; cursor: pointer; padding: 0; text-decoration: underline; }
+.result.pass { background: var(--good-bg); margin: 0 0 18px; }
+textarea {
+  display: block; width: 100%; margin-top: 4px; padding: 10px 12px; font: inherit; resize: vertical;
+  color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
+}
+textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.status.error { color: var(--bad); }
+#ask .who { margin-bottom: 14px; }
+
 @media print {
-  @page { size: A4 landscape; margin: 0; }
+  @page { size: letter portrait; margin: 12mm; }
   body { background: #fff; }
-  .site-header, .card, #step-video, #step-quiz { display: none !important; }
+  .site-header, .card, #step-video, #step-quiz, #step-sign { display: none !important; }
   .wrap { max-width: none; padding: 0; }
-  .cert-holder { margin: 0; overflow: visible; }
-  .certificate { border: 0; border-radius: 0; width: 297mm; height: 210mm; max-width: none; min-width: 0; aspect-ratio: auto; padding: 12mm; }
+  .doc-holder { margin: 0; }
+  .signed-doc { border: 0; padding: 0; max-width: none; }
 }

@@ -4,6 +4,7 @@
   const cfg = window.TRAINING_CONFIG;
   const $ = (id) => document.getElementById(id);
   const total = cfg.questions.length;
+  const formSubmitUrl = `https://formsubmit.co/ajax/${encodeURIComponent(cfg.notifyEmail)}`;
   let result = null;
 
   // ----- Setup -----
@@ -12,6 +13,12 @@
   $("pass-mark-text").textContent = `${cfg.passMark} of ${total}`;
   $("video-frame").src = `https://drive.google.com/file/d/${cfg.driveVideoId}/preview`;
   $("video-link").href = `https://drive.google.com/file/d/${cfg.driveVideoId}/view`;
+  $("form-title-h").textContent = `3. ${cfg.formTitle}`;
+  cfg.formText.forEach((para) => {
+    const p = document.createElement("p");
+    p.textContent = para;
+    $("form-text").append(p);
+  });
 
   const qBox = $("questions");
   cfg.questions.forEach((item, i) => {
@@ -35,16 +42,29 @@
     qBox.append(fs);
   });
 
+  function postForm(data) {
+    return fetch(formSubmitUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify(Object.assign({ _template: "table", _captcha: "false" }, data))
+    })
+      .then((r) => r.json())
+      .then((res) => {
+        if (String(res.success) !== "true") throw new Error(res.message || "not sent");
+      });
+  }
+
   // ----- Navigation -----
+  const order = ["video", "quiz", "sign", "done"];
   function show(step) {
-    ["video", "quiz", "cert"].forEach((s) => ($(`step-${s}`).hidden = s !== step));
-    const order = ["video", "quiz", "cert"];
+    order.forEach((s) => ($(`step-${s}`).hidden = s !== step));
     document.querySelectorAll(".steps li").forEach((li) => {
       const idx = order.indexOf(li.dataset.step);
       li.classList.toggle("active", li.dataset.step === step);
       li.classList.toggle("done", idx < order.indexOf(step));
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
+    if (step === "sign") sizePad();
   }
   $("to-quiz").onclick = () => show("quiz");
   $("back-to-video").onclick = () => show("video");
@@ -97,42 +117,120 @@
     }
 
     document.querySelectorAll(".question").forEach((q) => q.classList.remove("wrong"));
-    result = {
-      name, email, score,
-      date: new Date(),
-      id: "CT-" + Date.now().toString(36).toUpperCase().slice(-6) +
-          Math.random().toString(36).slice(2, 5).toUpperCase()
-    };
-    showCertificate();
+    result = { name, email, score };
+    $("pass-score").textContent = `${score} of ${total} correct`;
+    $("sign-name").value = name;
+    if (!$("ask-name").value) $("ask-name").value = name;
+    if (!$("ask-email").value) $("ask-email").value = email;
+    show("sign");
   });
 
-  // ----- Certificate -----
-  function showCertificate() {
+  // ----- Signature pad -----
+  const pad = $("sig-pad");
+  const ctx = pad.getContext("2d");
+  let drawing = false;
+  let hasInk = false;
+
+  function sizePad() {
+    const ratio = window.devicePixelRatio || 1;
+    const w = pad.clientWidth;
+    const h = pad.clientHeight;
+    if (!w || (pad.width === Math.round(w * ratio) && pad.height === Math.round(h * ratio))) return;
+    pad.width = Math.round(w * ratio);
+    pad.height = Math.round(h * ratio);
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    ctx.lineWidth = 2.2;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = "#1f2a37";
+    hasInk = false;
+  }
+  window.addEventListener("resize", () => { if (!hasInk) sizePad(); });
+
+  function point(e) {
+    const r = pad.getBoundingClientRect();
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  }
+  pad.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    pad.setPointerCapture(e.pointerId);
+    drawing = true;
+    const p = point(e);
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+    ctx.lineTo(p.x + 0.01, p.y);
+    ctx.stroke();
+    hasInk = true;
+  });
+  pad.addEventListener("pointermove", (e) => {
+    if (!drawing) return;
+    const p = point(e);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+  });
+  ["pointerup", "pointercancel", "pointerleave"].forEach((t) =>
+    pad.addEventListener(t, () => (drawing = false))
+  );
+  $("sig-clear").onclick = () => {
+    ctx.clearRect(0, 0, pad.width, pad.height);
+    hasInk = false;
+  };
+
+  // ----- Sign -----
+  $("sign-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const err = $("sign-error");
+    const signedName = $("sign-name").value.trim();
+    let msg = "";
+    if (!$("agree").checked) msg = "Please tick the box to confirm you agree.";
+    else if (!signedName) msg = "Please type your full name.";
+    else if (!hasInk) msg = "Please draw your signature in the box.";
+    if (msg) { err.textContent = msg; err.hidden = false; return; }
+    err.hidden = true;
+
+    result.signedName = signedName;
+    result.signature = pad.toDataURL("image/png");
+    result.date = new Date();
+    result.id = "CT-" + Date.now().toString(36).toUpperCase().slice(-6) +
+      Math.random().toString(36).slice(2, 5).toUpperCase();
+    showDone();
+  });
+
+  // ----- Done -----
+  function showDone() {
     const dateText = result.date.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
     const scoreText = `${result.score}/${total}`;
-    $("pass-score").textContent = `${result.score} of ${total}`;
-    $("cert-name").textContent = result.name;
-    $("cert-course").textContent = cfg.title;
-    $("cert-score").textContent = scoreText;
-    $("cert-date").textContent = dateText;
-    $("cert-id").textContent = result.id;
+    $("doc-org").textContent = cfg.orgName;
+    $("doc-title").textContent = cfg.formTitle;
+    $("doc-body").replaceChildren(...cfg.formText.map((t) => {
+      const p = document.createElement("p");
+      p.textContent = t;
+      return p;
+    }));
+    $("doc-name").textContent = result.signedName;
+    $("doc-email").textContent = result.email;
+    $("doc-course").textContent = cfg.title;
+    $("doc-score").textContent = `${scoreText} (pass mark ${cfg.passMark}/${total})`;
+    $("doc-date").textContent = dateText;
+    $("doc-id").textContent = result.id;
+    $("doc-sig-img").src = result.signature;
 
-    const subject = `Training completed: ${result.name}`;
+    const subject = `Training completed and form signed: ${result.signedName}`;
     const body =
-`Hi Shana,
+`Hello,
 
-I have completed the ${cfg.title} and passed the quiz.
+I have completed the ${cfg.title}, passed the quiz and signed the ${cfg.formTitle}.
 
-Name: ${result.name}
+Name: ${result.signedName}
 Email: ${result.email}
 Score: ${scoreText} (pass mark ${cfg.passMark}/${total})
-Date: ${dateText}
-Certificate ID: ${result.id}
+Date signed: ${dateText}
+Record ID: ${result.id}
 
-My certificate is attached.
+My signed form is attached.
 
 Best regards,
-${result.name}`;
+${result.signedName}`;
 
     $("notify-addr").textContent = cfg.notifyEmail;
     $("notify-addr").href = `mailto:${cfg.notifyEmail}`;
@@ -148,42 +246,31 @@ ${result.name}`;
       );
     };
 
-    show("cert");
-    autoNotify(subject, scoreText, dateText);
-  }
+    show("done");
 
-  function autoNotify(subject, scoreText, dateText) {
     const status = $("notify-status");
     if (!cfg.autoSend) { status.hidden = true; return; }
     status.className = "status warn";
-    status.textContent = "Sending a completion notice to Shana…";
-    fetch(`https://formsubmit.co/ajax/${encodeURIComponent(cfg.notifyEmail)}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify({
-        _subject: subject,
-        _template: "table",
-        _captcha: "false",
-        Name: result.name,
-        Email: result.email,
-        Score: scoreText,
-        Date: dateText,
-        "Certificate ID": result.id,
-        Training: cfg.title
-      })
+    status.textContent = "Sending your completion record to the office…";
+    postForm({
+      _subject: subject,
+      Name: result.signedName,
+      Email: result.email,
+      Score: scoreText,
+      "Date signed": dateText,
+      "Record ID": result.id,
+      Training: cfg.title,
+      Form: cfg.formTitle,
+      "Agreed to form": "Yes",
+      "Form text": cfg.formText.join("\n\n")
     })
-      .then((r) => r.json())
-      .then((data) => {
-        if (String(data.success) === "true") {
-          status.className = "status ok";
-          status.textContent = "✓ A completion notice was sent to Shana automatically.";
-        } else {
-          throw new Error(data.message || "not sent");
-        }
+      .then(() => {
+        status.className = "status ok";
+        status.textContent = "✓ Your completion record was sent to the office.";
       })
       .catch(() => {
         status.className = "status warn";
-        status.textContent = "We couldn't send the notice automatically.";
+        status.textContent = "We couldn't send your record automatically — please email your signed PDF using the button below.";
       });
   }
 
@@ -191,21 +278,58 @@ ${result.name}`;
   $("download-pdf").onclick = () => {
     const btn = $("download-pdf");
     if (!window.html2pdf) { window.print(); return; }
+    const label = btn.textContent;
     btn.disabled = true;
     btn.textContent = "Preparing PDF…";
-    const el = $("certificate");
-    const fileName = `Certificate - ${result.name.replace(/[^\p{L}\p{N} _-]/gu, "")}.pdf`;
+    const fileName = `Signed training form - ${result.signedName.replace(/[^\p{L}\p{N} _-]/gu, "")}.pdf`;
     html2pdf()
       .set({
-        margin: 0,
+        margin: [12, 12, 12, 12],
         filename: fileName,
         image: { type: "jpeg", quality: 0.96 },
-        html2canvas: { scale: 2, backgroundColor: "#fffdf8", windowWidth: 1100, width: el.offsetWidth },
-        jsPDF: { unit: "px", format: [el.offsetWidth, el.offsetHeight], orientation: "landscape", hotfixes: ["px_scaling"] }
+        html2canvas: { scale: 2, backgroundColor: "#ffffff" },
+        jsPDF: { unit: "mm", format: "letter", orientation: "portrait" }
       })
-      .from(el)
+      .from($("signed-doc"))
       .save()
       .catch(() => window.print())
-      .finally(() => { btn.disabled = false; btn.textContent = "Download PDF"; });
+      .finally(() => { btn.disabled = false; btn.textContent = label; });
   };
+
+  // ----- Questions -----
+  $("ask-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const status = $("ask-status");
+    const name = $("ask-name").value.trim();
+    const email = $("ask-email").value.trim();
+    const text = $("ask-text").value.trim();
+    status.hidden = false;
+    if (!name || !/^\S+@\S+\.\S+$/.test(email) || !text) {
+      status.className = "status error";
+      status.textContent = "Please fill in your name, a valid email and your question.";
+      return;
+    }
+    const subject = `Training question from ${name}`;
+    const mailto = `mailto:${cfg.notifyEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text + "\n\n" + name + "\n" + email)}`;
+    const btn = $("ask-send");
+    btn.disabled = true;
+    status.className = "status warn";
+    status.textContent = "Sending…";
+    postForm({ _subject: subject, _replyto: email, Name: name, Email: email, Question: text, Training: cfg.title })
+      .then(() => {
+        status.className = "status ok";
+        status.textContent = "✓ Thanks — your question was sent. We'll reply by email.";
+        $("ask-text").value = "";
+      })
+      .catch(() => {
+        status.className = "status error";
+        status.innerHTML = "";
+        status.append("We couldn't send it automatically. ");
+        const a = document.createElement("a");
+        a.href = mailto;
+        a.textContent = "Email your question instead";
+        status.append(a, ".");
+      })
+      .finally(() => { btn.disabled = false; });
+  });
 })();

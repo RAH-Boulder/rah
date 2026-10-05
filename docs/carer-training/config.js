@@ -21,6 +21,18 @@ window.TRAINING_CONFIG = {
   // the certificate page works either way.
   autoSend: true,
 
+  // Shown at the top of the signed form.
+  orgName: "Right at Home Boulder",
+
+  // The form caregivers sign after passing the quiz.
+  // TODO: replace with the wording of your own form. Each string is one paragraph.
+  formTitle: "Annual Training Acknowledgment",
+  formText: [
+    "I confirm that I have watched the Annual In-Home Care Training video in full and passed the training quiz.",
+    "I understand the policies and procedures covered in the training, including clocking in and out, shift cancellations, client boundaries, mandatory reporting, dementia care, fall procedures and infection control.",
+    "I agree to follow these policies while providing care, and I know I can contact the office if I have any questions."
+  ],
+
   // Questions come strictly from the "Annual Training – Right at Home Boulder"
   // slides (Annual_Training_20261003_small.pptx).
   // `answer` is the index of the correct option, counting from 0.

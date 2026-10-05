@@ -16,8 +16,10 @@
       <ol class="steps" aria-label="Progress">
         <li data-step="video" class="active"><span>1</span> Watch</li>
         <li data-step="quiz"><span>2</span> Quiz</li>
-        <li data-step="cert"><span>3</span> Certificate</li>
+        <li data-step="sign"><span>3</span> Sign</li>
+        <li data-step="done"><span>4</span> Done</li>
       </ol>
+      <p class="small"><a href="#ask">Have a question? Ask us here.</a></p>
     </div>
   </header>
 
@@ -67,41 +69,70 @@
       </div>
     </section>
 
-    <!-- Step 3: certificate -->
-    <section id="step-cert" hidden>
-      <div class="card notice">
-        <h2>Congratulations — you passed!</h2>
-        <p>Your score: <strong id="pass-score"></strong>. Your training is complete.
-          Download or print your certificate below.</p>
+    <!-- Step 3: sign the form -->
+    <section id="step-sign" class="card" hidden>
+      <div class="result pass">
+        <h3>You passed — <span id="pass-score"></span></h3>
+        <p>One last step: read and sign the form below.</p>
+      </div>
+      <h2 id="form-title-h">3. Training acknowledgment</h2>
+      <div id="form-text" class="form-text"></div>
+      <form id="sign-form" novalidate>
+        <label class="check">
+          <input type="checkbox" id="agree">
+          <span>I have read this form and agree to it.</span>
+        </label>
+        <label>Type your full name
+          <input type="text" id="sign-name" autocomplete="name" required>
+        </label>
+        <div class="sig-label">
+          <span>Signature</span>
+          <button type="button" class="link-btn" id="sig-clear">Clear</button>
+        </div>
+        <canvas id="sig-pad" class="sig-pad" aria-label="Signature pad. Draw your signature with a mouse or finger."></canvas>
+        <p class="muted small">Draw your signature with your mouse or finger.</p>
+        <p id="sign-error" class="error" role="alert" hidden></p>
         <div class="actions">
-          <button class="btn primary" id="download-pdf">Download PDF</button>
+          <button type="submit" class="btn primary">Sign and submit</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Step 4: done -->
+    <section id="step-done" hidden>
+      <div class="card notice">
+        <h2>All done — thank you!</h2>
+        <p>Your training is complete and your form is signed. Download or print a copy for your records.</p>
+        <p id="notify-status" class="status"></p>
+        <div class="actions">
+          <button class="btn primary" id="download-pdf">Download signed form (PDF)</button>
           <button class="btn" id="print">Print</button>
         </div>
       </div>
 
-      <div class="cert-holder">
-        <div id="certificate" class="certificate">
-          <div class="cert-inner">
-            <p class="cert-kicker">Certificate of Completion</p>
-            <p class="cert-line">This certifies that</p>
-            <p class="cert-name" id="cert-name"></p>
-            <p class="cert-line">has completed the</p>
-            <p class="cert-course" id="cert-course"></p>
-            <p class="cert-line">and passed the final quiz with a score of <strong id="cert-score"></strong>.</p>
-            <div class="cert-foot">
-              <div><span id="cert-date"></span><small>Date</small></div>
-              <div class="seal" aria-hidden="true">✓</div>
-              <div><span id="cert-id"></span><small>Certificate ID</small></div>
-            </div>
+      <div class="doc-holder">
+        <div id="signed-doc" class="signed-doc">
+          <p class="doc-org" id="doc-org"></p>
+          <h2 class="doc-title" id="doc-title"></h2>
+          <div class="doc-body" id="doc-body"></div>
+          <table class="doc-facts">
+            <tr><th>Name</th><td id="doc-name"></td></tr>
+            <tr><th>Email</th><td id="doc-email"></td></tr>
+            <tr><th>Training</th><td id="doc-course"></td></tr>
+            <tr><th>Quiz score</th><td id="doc-score"></td></tr>
+            <tr><th>Date signed</th><td id="doc-date"></td></tr>
+            <tr><th>Record ID</th><td id="doc-id"></td></tr>
+          </table>
+          <div class="doc-sig">
+            <img id="doc-sig-img" alt="Signature">
+            <p>Signature</p>
           </div>
         </div>
       </div>
 
       <div class="card" id="notify-card">
-        <h2>Let Shana know</h2>
-        <p id="notify-status" class="status"></p>
-        <p>Please also send this email to <a id="notify-addr"></a> so there's a record of your
-          completion. Attach the PDF certificate if you can.</p>
+        <h2>Send a copy to the office</h2>
+        <p>Please also email your signed PDF to <a id="notify-addr"></a> so there's a record of your completion.</p>
         <div class="email-box">
           <p><strong>To:</strong> <span id="mail-to"></span></p>
           <p><strong>Subject:</strong> <span id="mail-subject"></span></p>
@@ -112,6 +143,29 @@
           <button class="btn" id="copy-mail">Copy email text</button>
         </div>
       </div>
+    </section>
+
+    <!-- Questions: available at any step -->
+    <section id="ask" class="card">
+      <h2>Have a question?</h2>
+      <p>Ask about the training, the quiz or the form. We'll reply by email.</p>
+      <form id="ask-form" novalidate>
+        <div class="who">
+          <label>Your name
+            <input type="text" id="ask-name" autocomplete="name" required>
+          </label>
+          <label>Your email
+            <input type="email" id="ask-email" autocomplete="email" required>
+          </label>
+        </div>
+        <label>Your question
+          <textarea id="ask-text" rows="4" required></textarea>
+        </label>
+        <p id="ask-status" class="status" role="status" hidden></p>
+        <div class="actions">
+          <button type="submit" class="btn primary" id="ask-send">Send question</button>
+        </div>
+      </form>
     </section>
   </main>
 

@@ -91,12 +91,32 @@
       .from($("signed-doc"));
   }
 
-  function postForm(data) {
-    return fetch(formSubmitUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify(Object.assign({ _template: "table", _captcha: "false" }, data))
-    })
+  // Sends an email through FormSubmit. With `file`, the email has it attached
+  // (FormSubmit takes attachments as multipart form data).
+  // The signed form as a PDF file, for attaching to the completion email.
+  function signedPdfFile() {
+    if (!window.html2pdf) return Promise.reject(new Error("no PDF library"));
+    // Wait for fonts and for show()'s smooth scroll to finish; capturing the
+    // page mid-scroll produces a blank PDF.
+    const settled = new Promise((resolve) => setTimeout(resolve, 1200));
+    return Promise.all([settled, document.fonts ? document.fonts.ready : null])
+      .then(() => withPdfMode(() => signedPdf().outputPdf("blob")))
+      .then((blob) => new File([blob], `${fileBase()}.pdf`, { type: "application/pdf" }));
+  }
+
+  function postForm(data, file) {
+    const fields = Object.assign({ _template: "table", _captcha: "false" }, data);
+    let body;
+    const headers = { Accept: "application/json" };
+    if (file) {
+      body = new FormData();
+      Object.keys(fields).forEach((k) => body.append(k, fields[k]));
+      body.append("attachment", file, file.name);
+    } else {
+      body = JSON.stringify(fields);
+      headers["Content-Type"] = "application/json";
+    }
+    return fetch(formSubmitUrl, { method: "POST", headers, body })
       .then((r) => r.json())
       .then((res) => {
         if (String(res.success) !== "true") throw new Error(res.message || "not sent");
@@ -258,8 +278,8 @@ ${result.signedName}`;
     const status = $("notify-status");
     if (!cfg.autoSend) { status.hidden = true; return; }
     status.className = "status warn";
-    status.textContent = "Sending your completion record to the office…";
-    postForm({
+    status.textContent = "Sending your signed form to the office…";
+    const record = {
       _subject: subject,
       "First name": result.first,
       "Last name": result.last,
@@ -272,15 +292,27 @@ ${result.signedName}`;
       Form: cfg.form.title,
       "Agreed to form": "Yes",
       "Confirmed": cfg.form.statements.join("\n")
-    })
+    };
+    const fail = () => {
+      status.className = "status warn";
+      status.textContent = "We couldn't send your signed form automatically — please download it and email it to the office using the button below.";
+    };
+
+    // Email the record with the signed PDF attached. If that fails, still send
+    // the record without it and ask the caregiver to email the PDF.
+    signedPdfFile()
+      .then((file) => postForm(record, file))
       .then(() => {
         status.className = "status ok";
-        status.textContent = "✓ Your completion record was sent to the office.";
+        status.textContent = "✓ Your signed form was emailed to the office.";
       })
-      .catch(() => {
-        status.className = "status warn";
-        status.textContent = "We couldn't send your record automatically — please email your signed PDF using the button below.";
-      });
+      .catch(() =>
+        postForm(Object.assign({}, record, { "Signed PDF": "Not attached — ask the caregiver to email it." }))
+          .then(() => {
+            status.className = "status warn";
+            status.textContent = "Your completion record was sent, but the signed PDF couldn't be attached — please download it and email it to the office using the button below.";
+          }, fail)
+      );
   }
 
   $("print").onclick = () => window.print();

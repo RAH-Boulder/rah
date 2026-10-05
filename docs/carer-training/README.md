@@ -25,14 +25,15 @@ Everything editable is in `config.js`:
 
 ## Completion notice
 
-When someone signs the form, the page tries to email `notifyEmail` through
-[FormSubmit](https://formsubmit.co) (free, no account). The **first** submission
-sends an activation email to that address — the recipient must click it once,
-otherwise nothing is delivered. Changing `notifyEmail` needs a new activation.
-Set `autoSend: false` to turn this off.
+When someone signs, the page emails `notifyEmail` through
+[FormSubmit](https://formsubmit.co) (free, no account) with the completion record
+and the signed PDF attached (`First Last 2026.pdf`). If the attachment is refused,
+it sends the record without it and asks the caregiver to email the PDF.
+`formSubmitId` is FormSubmit's alias for `notifyEmail`. Set `autoSend: false` to
+turn this off.
 
-Either way, the last page shows a pre-written email with a "Open in my
-email app" button and a "Copy" button, so the caregiver can send it themselves.
+The last page also shows a pre-written email with "Open in my email app" and
+"Copy" buttons, as a fallback.
 
 ## Files
 

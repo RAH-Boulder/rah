@@ -5,7 +5,7 @@
   const $ = (id) => document.getElementById(id);
   const total = cfg.questions.length;
   const passMark = Math.ceil((total * cfg.passPercent) / 100);
-  const formSubmitUrl = `https://formsubmit.co/ajax/${encodeURIComponent(cfg.notifyEmail)}`;
+  const formSubmitUrl = `https://formsubmit.co/ajax/${encodeURIComponent(cfg.formSubmitId || cfg.notifyEmail)}`;
   let result = null;
 
   // ----- Setup -----

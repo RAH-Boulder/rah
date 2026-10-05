@@ -17,6 +17,7 @@ Everything editable is in `config.js`:
 - `notifyEmail` — who gets completion records and questions ([email removed]).
 - `questions` — the quiz, from "Quiz - Annual Training.docx".
   `answer` is the index of the correct option, counting from 0.
+- `formSubmitId` — FormSubmit's alias for `notifyEmail`, used for the automatic emails.
 - `passPercent` — percentage needed to pass (80, rounded up: 12 of 14).
 - `form` — the acknowledgement caregivers sign: title, organisation, training length,
   topics and the statements they confirm.

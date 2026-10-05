@@ -4,7 +4,7 @@
   // Must match data-version in index.html. Bump both (and the ?v= on the
   // style/script links) on every change: right after an update, a browser can
   // otherwise pair a cached old page with this new script, which breaks the quiz.
-  const VERSION = "2026-10-05.1";
+  const VERSION = "2026-10-05.2";
   if (document.documentElement.dataset.version !== VERSION) {
     // Load the page again under a new URL so the browser can't use its cached copy.
     const key = "carer-training-reloaded-for";
@@ -114,8 +114,6 @@
       .from($("signed-doc"));
   }
 
-  // Sends an email through FormSubmit. With `file`, the email has it attached
-  // (FormSubmit takes attachments as multipart form data).
   // The signed form as a PDF file, for attaching to the completion email.
   function signedPdfFile() {
     if (!window.html2pdf) return Promise.reject(new Error("no PDF library"));
@@ -127,24 +125,67 @@
       .then((blob) => new File([blob], `${fileBase()}.pdf`, { type: "application/pdf" }));
   }
 
-  function postForm(data, file) {
-    const fields = Object.assign({ _template: "table", _captcha: "false" }, data);
-    let body;
-    const headers = { Accept: "application/json" };
-    if (file) {
-      body = new FormData();
-      Object.keys(fields).forEach((k) => body.append(k, fields[k]));
-      body.append("attachment", file, file.name);
-    } else {
-      body = JSON.stringify(fields);
-      headers["Content-Type"] = "application/json";
-    }
-    return fetch(formSubmitUrl, { method: "POST", headers, body })
+  // Sends an email through FormSubmit's AJAX endpoint (no attachments).
+  function postForm(data) {
+    return fetch(formSubmitUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify(Object.assign({ _template: "table", _captcha: "false" }, data))
+    })
       .then((r) => r.json())
       .then((res) => {
         if (String(res.success) !== "true") throw new Error(res.message || "not sent");
       });
   }
+
+  // Sends an email with `file` attached. FormSubmit's AJAX endpoint drops
+  // attachments, so this submits a normal multipart form (the way FormSubmit
+  // documents file uploads) into a hidden frame, keeping the caregiver on the
+  // page. The reply can't be read across sites, so "sent" means FormSubmit
+  // answered within 45 seconds.
+  function postFormWithFile(data, file) {
+    return new Promise((resolve, reject) => {
+      if (typeof DataTransfer === "undefined") { reject(new Error("can't attach files here")); return; }
+      const name = `formsubmit-${Date.now()}`;
+      const frame = document.createElement("iframe");
+      frame.name = name;
+      frame.hidden = true;
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = `https://formsubmit.co/${encodeURIComponent(cfg.formSubmitId || cfg.notifyEmail)}`;
+      form.enctype = "multipart/form-data";
+      form.target = name;
+      form.hidden = true;
+      const fields = Object.assign({ _template: "table", _captcha: "false" }, data);
+      Object.keys(fields).forEach((k) => {
+        // A textarea keeps line breaks, which a hidden input would drop.
+        const field = document.createElement("textarea");
+        field.name = k;
+        field.value = fields[k];
+        form.append(field);
+      });
+      const input = document.createElement("input");
+      input.type = "file";
+      input.name = "attachment";
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      input.files = dt.files;
+      form.append(input);
+
+      const cleanUp = () => setTimeout(() => { form.remove(); frame.remove(); }, 1000);
+      const timer = setTimeout(() => { cleanUp(); reject(new Error("no reply")); }, 45000);
+      document.body.append(frame, form);
+      frame.addEventListener("load", () => {
+        // Ignore the frame's own blank page; any other load is FormSubmit's reply.
+        try { if (frame.contentWindow.location.href === "about:blank") return; } catch (e) { /* cross-site: it's the reply */ }
+        clearTimeout(timer);
+        cleanUp();
+        resolve();
+      });
+      form.submit();
+    });
+  }
+
 
   // ----- Navigation -----
   const order = ["video", "quiz", "sign", "done"];
@@ -349,7 +390,7 @@ ${result.signedName}`;
     // Email the record with the signed PDF attached. If that fails, still send
     // the record without it and ask the caregiver to email the PDF.
     signedPdfFile()
-      .then((file) => postForm(record, file))
+      .then((file) => postFormWithFile(record, file))
       .then(() => {
         status.className = "status ok";
         status.textContent = "✓ Your signed form was emailed to the office.";

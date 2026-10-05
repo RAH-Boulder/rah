@@ -4,7 +4,7 @@
   // Must match data-version in index.html. Bump both (and the ?v= on the
   // style/script links) on every change: right after an update, a browser can
   // otherwise pair a cached old page with this new script, which breaks the quiz.
-  const VERSION = "2026-10-05.11";
+  const VERSION = "2026-10-05.13";
   if (document.documentElement.dataset.version !== VERSION) {
     // Load the page again under a new URL so the browser can't use its cached copy.
     const key = "carer-training-reloaded-for";
@@ -125,15 +125,23 @@
   }
 
   // Sends an email through FormSubmit's AJAX endpoint (no attachments).
+  // Gives up after 45 seconds so the page never sits on "Sending…" forever.
   function postForm(data) {
+    const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+    const timer = ctrl && setTimeout(() => ctrl.abort(), 45000);
     return fetch(formSubmitUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify(Object.assign({ _template: "table", _captcha: "false" }, data))
+      body: JSON.stringify(Object.assign({ _template: "table", _captcha: "false" }, data)),
+      signal: ctrl ? ctrl.signal : undefined
     })
+      .catch((err) => {
+        throw new Error(err && err.name === "AbortError" ? "FormSubmit didn't reply within 45 seconds" : "not sent");
+      })
+      .finally(() => clearTimeout(timer))
       .then((r) => r.json())
       .then((res) => {
-        if (String(res.success) !== "true") throw new Error(res.message || "not sent");
+        if (String(res.success) !== "true") throw new Error(res.message ? `FormSubmit said: ${res.message}` : "not sent");
       });
   }
 
@@ -417,7 +425,7 @@
         // Show FormSubmit's own reason (e.g. activation needed, too many
         // requests) so problems can be diagnosed from the page.
         if (err && err.message && !/^(not sent|Failed to fetch|Load failed|NetworkError)/i.test(err.message)) {
-          status.append(`(FormSubmit said: ${err.message}) `);
+          status.append(`(${err.message}) `);
         }
         const a = document.createElement("a");
         a.href = mailto;

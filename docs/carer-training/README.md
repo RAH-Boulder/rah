@@ -14,7 +14,7 @@ No server, no build step.
 
 Everything editable is in `config.js`:
 
-- `notifyEmail` — who gets the completion notice (**TODO: Shana's Right at Home email**).
+- `notifyEmail` — who gets completion records and questions ([email removed]).
 - `questions` — the quiz, from "Quiz - Annual Training.docx".
   `answer` is the index of the correct option, counting from 0.
 - `passPercent` — percentage needed to pass (80, rounded up: 12 of 14).

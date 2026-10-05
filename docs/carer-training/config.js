@@ -5,7 +5,7 @@
 window.TRAINING_CONFIG = {
   title: "Annual In-Home Care Training",
 
-  // TODO: replace with Shana's Right at Home email address.
+  // Completion records and caregiver questions are emailed here.
   notifyEmail: "[email removed]",
 
   // Google Drive file ID of the training video. The file must be shared as

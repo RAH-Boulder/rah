@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-version="2026-10-05.1">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=2026-10-05.1">
 </head>
 <body>
   <header class="site-header">
@@ -42,7 +42,7 @@
     <!-- Step 2: quiz -->
     <section id="step-quiz" class="card" hidden>
       <h2>2. Quiz</h2>
-      <form id="quiz-form" novalidate>
+      <form id="quiz-form" novalidate onsubmit="return false">
         <fieldset class="who">
           <legend>About you</legend>
           <label>First name
@@ -87,7 +87,7 @@
       </div>
       <h2 id="form-title-h">3. Training acknowledgment</h2>
       <div id="form-text" class="form-text"></div>
-      <form id="sign-form" novalidate>
+      <form id="sign-form" novalidate onsubmit="return false">
         <label class="check">
           <input type="checkbox" id="agree">
           <span>I have read this form and agree to it.</span>
@@ -179,7 +179,7 @@
       <p class="privacy-note" id="ask-privacy"><strong>Please don't include client names or health information.</strong>
         Questions are sent by email through an outside service, so keep them general
         (for example, "a client with dementia" instead of a name).</p>
-      <form id="ask-form" novalidate>
+      <form id="ask-form" novalidate onsubmit="return false">
         <div class="who">
           <label>Your name
             <input type="text" id="ask-name" autocomplete="name" required>
@@ -201,7 +201,7 @@
 
   <!-- html2pdf.js 0.10.1 (MIT), copied from the official npm package so no outside site can change it -->
   <script src="vendor/html2pdf.bundle.min.js"></script>
-  <script src="config.js"></script>
-  <script src="app.js"></script>
+  <script src="config.js?v=2026-10-05.1"></script>
+  <script src="app.js?v=2026-10-05.1"></script>
 </body>
 </html>

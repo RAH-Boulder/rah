@@ -1,6 +1,29 @@
 (function () {
   "use strict";
 
+  // Must match data-version in index.html. Bump both (and the ?v= on the
+  // style/script links) on every change: right after an update, a browser can
+  // otherwise pair a cached old page with this new script, which breaks the quiz.
+  const VERSION = "2026-10-05.1";
+  if (document.documentElement.dataset.version !== VERSION) {
+    // Load the page again under a new URL so the browser can't use its cached copy.
+    const key = "carer-training-reloaded-for";
+    let tried = null;
+    try { tried = sessionStorage.getItem(key); } catch (e) { /* storage blocked */ }
+    if (tried !== VERSION) {
+      try { sessionStorage.setItem(key, VERSION); } catch (e) { /* storage blocked */ }
+      location.replace(`${location.pathname}?v=${encodeURIComponent(VERSION)}${location.hash}`);
+      return;
+    }
+    // Reloading didn't help: ask the caregiver to refresh rather than run
+    // against a page this script doesn't match.
+    const note = document.createElement("p");
+    note.className = "update-note";
+    note.textContent = "This page was just updated. Please refresh the page (or close it and open the link again) before you start.";
+    document.body.prepend(note);
+    return;
+  }
+
   const cfg = window.TRAINING_CONFIG;
   const $ = (id) => document.getElementById(id);
   const total = cfg.questions.length;

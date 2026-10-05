@@ -40,3 +40,11 @@ The last page also shows a pre-written email with "Open in my email app" and
 `vendor/html2pdf.bundle.min.js` is html2pdf.js 0.10.1 (MIT licence, see
 `vendor/html2pdf-LICENSE.txt`), copied from the official npm package rather than
 loaded from a CDN, so no outside site can change the code that runs on this page.
+
+## Updating the site
+
+On every change, bump the version in **both** `app.js` (`VERSION`) and `index.html`
+(`data-version` and the `?v=` on `style.css`, `config.js` and `app.js`). GitHub Pages
+lets browsers cache files for about 10 minutes, so right after an update a browser
+can pair an old cached page with the new script. The version check spots that and
+reloads the page once; without it, the quiz breaks for those caregivers.

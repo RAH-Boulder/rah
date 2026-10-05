@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-version="2026-10-05.19">
+<html lang="en" data-version="2026-10-05.20">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=2026-10-05.19">
+  <link rel="stylesheet" href="style.css?v=2026-10-05.20">
 </head>
 <body>
   <header class="site-header">
@@ -30,7 +30,12 @@
       <p>Watch the whole video before you take the quiz. You need
         <strong id="pass-mark-text">12 of 14</strong> correct answers to pass.</p>
       <div class="video">
-        <iframe id="video-frame" title="Training video" allow="autoplay; fullscreen" allowfullscreen></iframe>
+        <div id="video-player"></div>
+        <iframe id="video-frame" title="Training video" allow="autoplay; fullscreen" allowfullscreen hidden></iframe>
+      </div>
+      <div id="watch" class="watch" hidden>
+        <div class="watch-bar" aria-hidden="true"><span id="watch-fill"></span></div>
+        <p id="watch-text" class="watch-text" role="status"></p>
       </div>
       <div class="actions">
         <button class="btn primary" id="to-quiz">I've watched the video — start the quiz</button>
@@ -143,6 +148,7 @@
             <tr><th>Email</th><td id="doc-email"></td></tr>
             <tr><th>Training</th><td id="doc-course"></td></tr>
             <tr><th>Training length</th><td id="doc-length"></td></tr>
+            <tr><th>Video watched</th><td id="doc-watched"></td></tr>
             <tr><th>Quiz score</th><td id="doc-score"></td></tr>
             <tr><th>Date signed</th><td id="doc-date"></td></tr>
             <tr><th>Record ID</th><td id="doc-id"></td></tr>
@@ -188,7 +194,7 @@
 
   <!-- html2pdf.js 0.10.1 (MIT), copied from the official npm package so no outside site can change it -->
   <script src="vendor/html2pdf.bundle.min.js"></script>
-  <script src="config.js?v=2026-10-05.19"></script>
-  <script src="app.js?v=2026-10-05.19"></script>
+  <script src="config.js?v=2026-10-05.20"></script>
+  <script src="app.js?v=2026-10-05.20"></script>
 </body>
 </html>

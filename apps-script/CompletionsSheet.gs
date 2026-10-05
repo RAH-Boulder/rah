@@ -13,7 +13,7 @@
 
 const SHEET_NAME = "Completions";
 const COLUMNS = ["Received", "First name", "Last name", "Email", "Quiz score",
-  "Date signed", "Signature", "Record ID", "Training"];
+  "Date signed", "Signature", "Record ID", "Training", "Video watched"];
 
 // At most this many rows per hour, so a flood of fake submissions can't fill the sheet.
 const MAX_ROWS_PER_HOUR = 60;
@@ -25,7 +25,8 @@ function doPost(e) {
     const row = [
       new Date(),
       clean(data.first), clean(data.last), clean(data.email), clean(data.score),
-      clean(data.dateSigned), clean(data.signature), clean(data.recordId), clean(data.training)
+      clean(data.dateSigned), clean(data.signature), clean(data.recordId), clean(data.training),
+      clean(data.videoWatched)
     ];
     if (!row[1] || !row[2]) return reply({ ok: false, error: "missing name" });
 
@@ -47,7 +48,8 @@ function doPost(e) {
   }
 }
 
-// The "Completions" tab, created with a header row the first time.
+// The "Completions" tab, created with a header row the first time. If the
+// tab was made by an older version with fewer columns, the header is extended.
 function sheet() {
   const book = SpreadsheetApp.getActiveSpreadsheet();
   let tab = book.getSheetByName(SHEET_NAME);
@@ -55,8 +57,10 @@ function sheet() {
     tab = book.insertSheet(SHEET_NAME);
     tab.appendRow(COLUMNS);
     tab.setFrozenRows(1);
-    tab.getRange(1, 1, 1, COLUMNS.length).setFontWeight("bold");
+  } else if (tab.getRange(1, COLUMNS.length).getValue() !== COLUMNS[COLUMNS.length - 1]) {
+    tab.getRange(1, 1, 1, COLUMNS.length).setValues([COLUMNS]);
   }
+  tab.getRange(1, 1, 1, COLUMNS.length).setFontWeight("bold");
   return tab;
 }
 

@@ -4,7 +4,7 @@
   // Must match data-version in index.html. Bump both (and the ?v= on the
   // style/script links) on every change: right after an update, a browser can
   // otherwise pair a cached old page with this new script, which breaks the quiz.
-  const VERSION = "2026-10-05.19";
+  const VERSION = "2026-10-05.20";
   if (document.documentElement.dataset.version !== VERSION) {
     // Load the page again under a new URL so the browser can't use its cached copy.
     const key = "carer-training-reloaded-for";
@@ -35,7 +35,6 @@
   document.title = cfg.title;
   $("page-title").textContent = cfg.title;
   $("pass-mark-text").textContent = `${passMark} of ${total}`;
-  $("video-frame").src = `https://drive.google.com/file/d/${cfg.driveVideoId}/preview`;
   $("form-title-h").textContent = `3. ${cfg.form.title}`;
   $("form-text").append(...formContent());
 
@@ -142,6 +141,7 @@
         dateSigned: dateText,
         signature: result.signature,
         recordId: result.id,
+        videoWatched: result.watched,
         training: cfg.title
       })
     }).catch(() => { /* the email is still the record */ });
@@ -217,6 +217,151 @@
   }
 
 
+  // ----- Video -----
+  // With a YouTube video, track which seconds were actually played (skipping
+  // ahead doesn't count) and keep the quiz locked until cfg.watchPercent is
+  // reached. Progress is saved on this device so a reload doesn't lose it.
+  // `watched` is null when tracking isn't possible (Drive video, or the
+  // YouTube player failed to load).
+  const video = { pct: null, unlocked: true };
+
+  function watchedLabel() {
+    return video.pct === null ? "Not tracked" : `${video.pct}%`;
+  }
+
+  function setupVideo() {
+    if (!cfg.youtubeId) {
+      $("video-frame").src = `https://drive.google.com/file/d/${cfg.driveVideoId}/preview`;
+      $("video-frame").hidden = false;
+      return;
+    }
+    const need = cfg.watchPercent;
+    const key = `carer-training-watched-${cfg.youtubeId}`;
+    let seen = null;      // one byte per second of video: 1 = played
+    let lastTime = 0;     // where they left off, for resuming
+    let player = null;
+    let timer = null;
+    let prev = null;
+
+    const load = () => {
+      try { return JSON.parse(localStorage.getItem(key) || "null"); } catch (e) { return null; }
+    };
+    const save = () => {
+      if (!seen) return;
+      try { localStorage.setItem(key, JSON.stringify({ n: seen.length, w: Array.from(seen).join(""), t: lastTime })); } catch (e) { /* storage blocked */ }
+    };
+    const saved = load();
+
+    video.pct = 0;
+    video.unlocked = false;
+    $("watch").hidden = false;
+
+    function render() {
+      $("watch-fill").style.width = `${Math.min(video.pct, 100)}%`;
+      if (video.unlocked) {
+        $("watch-text").textContent = `You've watched ${video.pct}% of the video. The quiz is unlocked.`;
+      } else {
+        $("watch-text").textContent = `You've watched ${video.pct}% of the video. The quiz unlocks at ${need}%.`;
+      }
+      $("watch").classList.toggle("done", video.unlocked);
+      $("to-quiz").disabled = !video.unlocked;
+      $("to-quiz").textContent = video.unlocked
+        ? "I've watched the video — start the quiz"
+        : `Watch at least ${need}% of the video to unlock the quiz`;
+    }
+
+    function init(duration) {
+      const n = Math.ceil(duration);
+      if (!n || seen) return;
+      seen = new Uint8Array(n);
+      if (saved && saved.n === n && typeof saved.w === "string") {
+        for (let i = 0; i < n; i++) seen[i] = saved.w.charCodeAt(i) === 49 ? 1 : 0;
+      }
+      update();
+    }
+
+    function update() {
+      if (!seen) return;
+      let count = 0;
+      for (let i = 0; i < seen.length; i++) count += seen[i];
+      video.pct = Math.floor((count / seen.length) * 100);
+      if (video.pct >= need) video.unlocked = true;
+      render();
+    }
+
+    // Called every second while playing. Only normal forward playback counts:
+    // a jump (seek) moves `prev` without marking the skipped seconds.
+    function tick() {
+      if (!player || !seen) return;
+      const t = player.getCurrentTime();
+      const rate = player.getPlaybackRate ? player.getPlaybackRate() : 1;
+      if (prev !== null && t >= prev && t - prev <= 1.5 * rate + 1) {
+        for (let s = Math.floor(prev); s < Math.floor(t) && s < seen.length; s++) seen[s] = 1;
+      }
+      prev = t;
+      lastTime = t;
+      update();
+      save();
+    }
+
+    render();
+
+    window.onYouTubeIframeAPIReady = () => {
+      player = new YT.Player("video-player", {
+        videoId: cfg.youtubeId,
+        host: "https://www.youtube-nocookie.com",
+        playerVars: {
+          rel: 0,
+          playsinline: 1,
+          // Resume where they left off, unless that was the very end.
+          start: saved && saved.t > 5 && saved.t < saved.n - 10 ? Math.floor(saved.t) : 0
+        },
+        events: {
+          onReady: () => {
+            clearTimeout(failTimer);
+            init(player.getDuration());
+          },
+          onStateChange: (e) => {
+            init(player.getDuration());
+            clearInterval(timer);
+            if (e.data === YT.PlayerState.PLAYING) {
+              prev = player.getCurrentTime();
+              timer = setInterval(tick, 1000);
+            } else {
+              tick();
+              prev = null;
+              if (e.data === YT.PlayerState.ENDED && seen) {
+                // The last partial second never gets a full tick.
+                seen[seen.length - 1] = seen[seen.length - 2] || seen[seen.length - 1];
+                update();
+                save();
+              }
+            }
+          }
+        }
+      });
+    };
+
+    // If YouTube can't load at all (blocked network), don't trap the
+    // caregiver: unlock the quiz and record the video as "Not tracked".
+    const failTimer = setTimeout(() => {
+      if (player && seen) return;
+      video.pct = null;
+      video.unlocked = true;
+      $("watch").hidden = false;
+      $("watch-fill").style.width = "0";
+      $("watch-text").textContent = "The video player couldn't load on this device, so viewing can't be tracked. Please watch the video before taking the quiz.";
+      $("to-quiz").disabled = false;
+      $("to-quiz").textContent = "I've watched the video — start the quiz";
+    }, 20000);
+
+    const tag = document.createElement("script");
+    tag.src = "https://www.youtube.com/iframe_api";
+    tag.onerror = () => { /* failTimer handles it */ };
+    document.head.append(tag);
+  }
+  setupVideo();
+
   // ----- Navigation -----
   const order = ["video", "quiz", "sign", "done"];
   function show(step) {
@@ -228,7 +373,7 @@
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
-  $("to-quiz").onclick = () => show("quiz");
+  $("to-quiz").onclick = () => { if (video.unlocked) show("quiz"); };
   $("back-to-video").onclick = () => show("video");
 
   // ----- Failed-quiz pop-up -----
@@ -363,6 +508,7 @@
     result.signedName = `${first} ${last}`;
     result.signature = signature;
     result.date = new Date();
+    result.watched = watchedLabel();
     result.id = "CT-" + Date.now().toString(36).toUpperCase().slice(-6) +
       Math.random().toString(36).slice(2, 5).toUpperCase();
     showDone();
@@ -382,6 +528,7 @@
     $("doc-score").textContent = `${scoreText} (pass mark ${passMark}/${total})`;
     $("doc-date").textContent = dateText;
     $("doc-id").textContent = result.id;
+    $("doc-watched").textContent = result.watched;
     $("doc-sig-text").textContent = result.signature;
     $("doc-sig-date").textContent = dateText;
 
@@ -402,6 +549,7 @@
       Score: scoreText,
       "Date signed": dateText,
       "Record ID": result.id,
+      "Video watched": result.watched,
       Training: cfg.title,
       Form: cfg.form.title,
       "Agreed to form": "Yes",

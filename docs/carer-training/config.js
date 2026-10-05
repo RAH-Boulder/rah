@@ -14,8 +14,15 @@ window.TRAINING_CONFIG = {
   // Google Sheet (apps-script/CompletionsSheet.gs). Leave empty to turn it off.
   sheetUrl: "https://script.google.com/macros/s/AKfycbwy2R7XDDSDBPFRS1jVaFKcrg8wLnGjqq7f6DF8dnuzjKg1FtmeqtArDKb0R9XpiHGb/exec",
 
-  // Google Drive file ID of the training video. The file must be shared as
-  // "Anyone with the link can view", otherwise the embedded player stays blank.
+  // YouTube video ID of the training video (from https://youtu.be/<ID>). The
+  // video must be Unlisted (not Private) with "Allow embedding" on. With a
+  // YouTube video the site tracks how much was watched and keeps the quiz
+  // locked until watchPercent is reached.
+  youtubeId: "0OPQwgSaJKQ",
+  watchPercent: 90,
+
+  // Fallback used only if youtubeId is empty: the Google Drive video (no
+  // watch tracking). Must be shared as "Anyone with the link can view".
   driveVideoId: "1H7-OliYsH8shxI7KFLKSqMc8ZtP9kkKM",
 
   // Percentage of correct answers needed to pass. With 14 questions, 80% = 12.

@@ -209,3 +209,13 @@ textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 .review-yours { color: var(--bad); }
 .review-right { color: var(--good); font-weight: 600; }
 .review-yours span, .review-right span { font-weight: 700; }
+
+/* Video watch progress */
+.video #video-player { position: absolute; inset: 0; width: 100%; height: 100%; }
+.watch { margin: 10px 0 0; }
+.watch-bar { height: 10px; border-radius: 99px; background: var(--line); overflow: hidden; }
+.watch-bar span { display: block; height: 100%; width: 0; background: var(--accent); transition: width .4s; }
+.watch.done .watch-bar span { background: var(--good); }
+.watch-text { margin: 6px 0 0; font-weight: 600; font-size: .95rem; }
+.watch.done .watch-text { color: var(--good); }
+.btn:disabled { cursor: not-allowed; }

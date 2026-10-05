@@ -23,7 +23,13 @@ Everything editable is in `config.js`:
 - `passPercent` — percentage needed to pass (80, rounded up: 12 of 14).
 - `form` — the acknowledgement caregivers sign: title, organisation, training length,
   topics and the statements they confirm.
-- `driveVideoId` — the Google Drive video. Share it as "Anyone with the link can view".
+- `youtubeId`, `watchPercent` — the training video on YouTube (Unlisted, embedding
+  allowed). The site counts the seconds actually played (skipping ahead doesn't count),
+  saves progress on the device, and keeps the quiz locked until `watchPercent` (90) is
+  reached. The percentage watched goes into the email, the signed PDF and the sheet. If
+  YouTube can't load at all, the quiz unlocks after 20 seconds and records "Not tracked".
+- `driveVideoId` — fallback Google Drive video, used only if `youtubeId` is empty (no
+  watch tracking). Share it as "Anyone with the link can view".
 
 ## Completion notice
 

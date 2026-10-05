@@ -4,7 +4,7 @@
 form on the carer-training site, the site sends the completion details here and
 the script adds a row to the **Completions** tab of a Google Sheet:
 
-Received · First name · Last name · Email · Quiz score · Date signed · Signature · Record ID · Training
+Received · First name · Last name · Email · Quiz score · Date signed · Signature · Record ID · Training · Video watched
 
 ## Set it up (once, about 5 minutes)
 

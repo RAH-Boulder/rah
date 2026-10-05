@@ -16,12 +16,6 @@ window.TRAINING_CONFIG = {
   // "Anyone with the link can view", otherwise the embedded player stays blank.
   driveVideoId: "1H7-OliYsH8shxI7KFLKSqMc8ZtP9kkKM",
 
-  // Web app URL of the Google Apps Script that saves each signed PDF to the
-  // Google Drive folder (see apps-script/SaveSignedForm.gs). Leave empty to
-  // turn this off.
-  // TODO: paste the URL from Deploy > New deployment (ends in /exec).
-  driveUploadUrl: "",
-
   // Percentage of correct answers needed to pass. With 14 questions, 80% = 12.
   passPercent: 80,
 

@@ -63,7 +63,7 @@
     return d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   }
 
-  // "First Last 2026" — used for the downloaded PDF and the copy saved to Google Drive.
+  // "First Last 2026" — the downloaded PDF's name.
   function fileBase() {
     const clean = (t) => t.replace(/[^\p{L}\p{N} '_-]/gu, "").replace(/\s+/g, " ").trim();
     return `${clean(result.first)} ${clean(result.last)} ${result.date.getFullYear()}`;
@@ -89,37 +89,6 @@
         jsPDF: { unit: "mm", format: "letter", orientation: "portrait" }
       })
       .from($("signed-doc"));
-  }
-
-  // Saves the signed PDF to the Google Drive folder through the Apps Script in
-  // apps-script/SaveSignedForm.gs. Does nothing until driveUploadUrl is set.
-  function saveToDrive() {
-    const status = $("drive-status");
-    if (!cfg.driveUploadUrl || !window.html2pdf) return;
-    status.hidden = false;
-    status.className = "status warn";
-    status.textContent = "Saving your signed form to the office's records…";
-    // Wait for fonts and for show()'s smooth scroll to finish; capturing the
-    // page mid-scroll produces a blank PDF.
-    const settled = new Promise((resolve) => setTimeout(resolve, 1200));
-    Promise.all([settled, document.fonts ? document.fonts.ready : null])
-      .then(() => withPdfMode(() => signedPdf().outputPdf("datauristring")))
-      .then((uri) => fetch(cfg.driveUploadUrl, {
-        method: "POST",
-        // text/plain keeps this a "simple" request, which Apps Script accepts.
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ fileName: fileBase(), pdf: uri.slice(uri.indexOf(",") + 1) })
-      }))
-      .then((r) => r.json())
-      .then((res) => {
-        if (!res.ok) throw new Error(res.error || "not saved");
-        status.className = "status ok";
-        status.textContent = "✓ Your signed form was saved to the office's records.";
-      })
-      .catch(() => {
-        status.className = "status warn";
-        status.textContent = "We couldn't save your signed form automatically — please download it and email it to the office using the button below.";
-      });
   }
 
   function postForm(data) {
@@ -285,7 +254,6 @@ ${result.signedName}`;
     };
 
     show("done");
-    saveToDrive();
 
     const status = $("notify-status");
     if (!cfg.autoSend) { status.hidden = true; return; }

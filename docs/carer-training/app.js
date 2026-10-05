@@ -136,11 +136,39 @@
   }
   $("to-quiz").onclick = () => show("quiz");
   $("back-to-video").onclick = () => show("video");
-  $("retry").onclick = () => {
-    $("fail-box").hidden = true;
-    $("quiz-form").hidden = false;
-    $("quiz-form").scrollIntoView({ behavior: "smooth" });
-  };
+
+  // ----- Failed-quiz pop-up -----
+  function openFailModal(score) {
+    $("fail-score").textContent = `${score} of ${total}`;
+    $("fail-need").textContent = `${passMark} of ${total}`;
+    $("fail-modal").hidden = false;
+    document.body.classList.add("modal-open");
+    $("retry").focus();
+  }
+  function closeFailModal() {
+    $("fail-modal").hidden = true;
+    document.body.classList.remove("modal-open");
+  }
+  // Clear the wrong answers (they stay highlighted) and jump to the first one.
+  function retake() {
+    closeFailModal();
+    const wrong = document.querySelectorAll(".question.wrong");
+    wrong.forEach((q) => q.querySelectorAll("input").forEach((input) => (input.checked = false)));
+    if (wrong.length) {
+      wrong[0].scrollIntoView({ block: "center" });
+      wrong[0].querySelector("input").focus({ preventScroll: true });
+    }
+  }
+  $("retry").onclick = retake;
+  $("fail-video").onclick = () => { closeFailModal(); show("video"); };
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !$("fail-modal").hidden) retake();
+  });
+  // Picking a new answer for a highlighted question removes its highlight.
+  $("questions").addEventListener("change", (e) => {
+    const q = e.target.closest(".question");
+    if (q) q.classList.remove("wrong", "missing");
+  });
 
   // ----- Quiz -----
   $("quiz-form").addEventListener("submit", (e) => {
@@ -166,7 +194,7 @@
       missing.forEach((i) => $(`q${i}`).classList.add("missing"));
       err.textContent = `Please answer all questions (${missing.length} left).`;
       err.hidden = false;
-      $(`q${missing[0]}`).scrollIntoView({ behavior: "smooth", block: "center" });
+      $(`q${missing[0]}`).scrollIntoView({ block: "center" });
       return;
     }
     err.hidden = true;
@@ -178,10 +206,7 @@
     });
 
     if (score < passMark) {
-      $("fail-score").textContent = `${score} of ${total} correct`;
-      $("fail-need").textContent = passMark;
-      $("fail-box").hidden = false;
-      $("fail-box").scrollIntoView({ behavior: "smooth" });
+      openFailModal(score);
       return;
     }
 

@@ -62,15 +62,22 @@
           <button type="submit" class="btn primary">Submit answers</button>
         </div>
       </form>
-      <div id="fail-box" class="result fail" hidden>
-        <h3>Not quite — <span id="fail-score"></span></h3>
-        <p>You need <span id="fail-need"></span> correct answers to pass. The questions you
-          missed are marked below. Review the video if you need to and try again.</p>
+    </section>
+
+    <!-- Pop-up shown when the quiz isn't passed -->
+    <div id="fail-modal" class="modal" hidden>
+      <div class="modal-box" role="alertdialog" aria-modal="true" aria-labelledby="fail-title" aria-describedby="fail-text">
+        <h2 id="fail-title">You didn't pass this time</h2>
+        <p id="fail-text">You got <strong id="fail-score"></strong> correct.
+          You need at least <strong id="fail-need"></strong> correct to pass.</p>
+        <p>The questions you got wrong are highlighted in red. Choose a new answer for each
+          one and submit the quiz again.</p>
         <div class="actions">
-          <button class="btn primary" id="retry">Try again</button>
+          <button class="btn primary" id="retry">Retake the quiz</button>
+          <button class="btn" id="fail-video">Rewatch the video first</button>
         </div>
       </div>
-    </section>
+    </div>
 
     <!-- Step 3: sign the form -->
     <section id="step-sign" class="card" hidden>

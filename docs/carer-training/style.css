@@ -85,7 +85,8 @@ input[type=text], input[type=email] {
 input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 
 .question { border-top: 1px solid var(--line); padding: 18px 0 6px; }
-.question legend { font-weight: 600; margin-bottom: 10px; }
+.question legend { font-weight: 600; margin-bottom: 10px; float: left; width: 100%; padding: 0; }
+.question .option:first-of-type { clear: both; }
 .question .num { color: var(--accent); margin-right: 4px; }
 .option {
   display: flex; gap: 10px; align-items: flex-start; padding: 9px 12px; margin: 6px 0;
@@ -94,12 +95,25 @@ input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 .option:hover { border-color: var(--muted); }
 .option input { margin-top: 4px; accent-color: var(--accent); }
 .question.wrong { background: var(--bad-bg); margin: 0 -24px; padding-left: 24px; padding-right: 24px; }
-.question.wrong legend::after { content: " — incorrect"; color: var(--bad); font-weight: 500; }
+.question.wrong { border-left: 5px solid var(--bad); }
+.question.wrong legend::after { content: " — incorrect, choose a new answer"; color: var(--bad); font-weight: 600; }
 .question.missing legend::after { content: " — please answer"; color: var(--bad); font-weight: 500; }
 
 .error { color: var(--bad); font-weight: 500; }
 .result { border-radius: 10px; padding: 16px 18px; margin-top: 18px; }
-.result.fail { background: var(--bad-bg); }
+.modal {
+  position: fixed; inset: 0; z-index: 10; display: flex; align-items: center; justify-content: center;
+  padding: 16px; background: rgba(15, 20, 28, .55);
+}
+.modal[hidden] { display: none; }
+.modal-box {
+  background: var(--card); color: var(--ink); border-radius: 14px; border-top: 6px solid var(--bad);
+  padding: 24px; max-width: 460px; width: 100%; max-height: calc(100vh - 32px); overflow-y: auto;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, .3);
+}
+.modal-box h2 { margin: 0 0 10px; font-size: 1.35rem; color: var(--bad); }
+.modal-box p { margin: 0 0 10px; }
+body.modal-open { overflow: hidden; }
 .result h3 { margin: 0 0 6px; }
 .notice { border-color: var(--good); background: var(--good-bg); }
 

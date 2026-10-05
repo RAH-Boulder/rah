@@ -185,3 +185,6 @@ textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
   padding: 10px 14px; font-size: .92rem; margin: 0 0 14px;
 }
 .update-note { margin: 0; padding: 14px 16px; background: var(--bad-bg); color: var(--bad); font-weight: 600; text-align: center; }
+.sign-callout { font-size: 1.5rem; line-height: 1.35; font-weight: 600; margin: 4px 0 0; }
+.sign-callout strong { display: block; margin-top: 6px; color: var(--bad); font-weight: 700; }
+@media (max-width: 600px) { .sign-callout { font-size: 1.3rem; } }

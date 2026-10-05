@@ -10,127 +10,184 @@ window.TRAINING_CONFIG = {
 
   // Google Drive file ID of the training video. The file must be shared as
   // "Anyone with the link can view", otherwise the embedded player stays blank.
-  driveVideoId: "1gsvwQfJpxmCEwC33AqXlxKpRmBbFBbn0",
+  driveVideoId: "1H7-OliYsH8shxI7KFLKSqMc8ZtP9kkKM",
 
-  // Correct answers needed to pass (out of the number of questions below).
-  passMark: 8,
+  // Percentage of correct answers needed to pass. With 14 questions, 80% = 12.
+  passPercent: 80,
 
-  // Send the completion notice automatically through FormSubmit.co (free, no
-  // account). The very first submission sends Shana an activation email; until
-  // she clicks it, notices are not delivered. The pre-written email shown on
-  // the certificate page works either way.
+  // Send the completion notice and questions automatically through
+  // FormSubmit.co (free, no account). The very first submission sends Shana an
+  // activation email; until she clicks it, nothing is delivered. The
+  // pre-written email shown on the last page works either way.
   autoSend: true,
 
-  // Shown at the top of the signed form.
-  orgName: "Right at Home Boulder",
+  // The form caregivers sign after passing the quiz, from
+  // "Annual Caregiver Training Acknowledgement.docx".
+  form: {
+    title: "Annual Caregiver Training Acknowledgement",
+    org: "Right at Home Boulder Colorado",
+    length: "1.5 hours",
+    topics: [
+      "Caregiver Role and Expectations: professionalism, attendance and scheduling, communication with the office, attire, and sharing contact information",
+      "Home Care Consumer Rights",
+      "Mistreatment, abuse, neglect, and exploitation (MANE) and mandatory reporting",
+      "Behavior Management - Working with clients with dementia",
+      "Home & Fire Safety",
+      "Emergency Procedures",
+      "Infection Control and Exposure Prevention",
+      "Basic First Aid"
+    ],
+    intro: "By signing below, I confirm that:",
+    statements: [
+      "I completed the entire annual training listed above.",
+      "I understand the material and had the opportunity to ask questions.",
+      "I understand that I must honor client rights and follow agency policies and procedures."
+    ]
+  },
 
-  // The form caregivers sign after passing the quiz.
-  // TODO: replace with the wording of your own form. Each string is one paragraph.
-  formTitle: "Annual Training Acknowledgment",
-  formText: [
-    "I confirm that I have watched the Annual In-Home Care Training video in full and passed the training quiz.",
-    "I understand the policies and procedures covered in the training, including clocking in and out, shift cancellations, client boundaries, mandatory reporting, dementia care, fall procedures and infection control.",
-    "I agree to follow these policies while providing care, and I know I can contact the office if I have any questions."
-  ],
-
-  // Questions come strictly from the "Annual Training – Right at Home Boulder"
-  // slides (Annual_Training_20261003_small.pptx).
-  // `answer` is the index of the correct option, counting from 0.
+  // Questions and answer key from "Quiz - Annual Training.docx".
+  // `answer` is the index of the correct option, counting from 0 (A=0, B=1, C=2, D=3).
+  // Answers are used only for grading and are never shown on the page.
   questions: [
     {
-      q: "The WellSky app isn't working and you need to clock in. What should you do?",
+      q: "How soon must suspected abuse of an at-risk adult be reported to law enforcement?",
       options: [
-        "Skip clocking in and tell the office at the end of the week",
-        "Call Telephony from your own phone",
-        "Call Telephony from the client's phone, using the number on the back of your badge",
-        "Ask the client to note your arrival time on paper"
+        "Within 7 days",
+        "By the end of your next shift",
+        "Within 24 hours",
+        "Only after the office confirms it happened"
       ],
-      answer: 2
+      answer: 2  // C
     },
     {
-      q: "What is the minimum notice required to cancel a scheduled shift?",
-      options: ["2 hours", "12 hours", "24 hours", "2 weeks"],
-      answer: 2
+      q: "You arrive for a shift and cannot reach the client. What should you do?",
+      options: [
+        "Leave and go home",
+        "Notify the office immediately and do not leave",
+        "Wait 24 hours, then call the office",
+        "Ask a neighbor to handle it and clock out"
+      ],
+      answer: 1  // B
     },
     {
-      q: "What happens if you cancel 3 or more shifts with less than 24 hours' notice within any 60-day period?",
+      q: "Which of the following is a client right?",
       options: [
-        "You are automatically removed from all active shifts, and it can result in termination",
-        "Nothing, as long as you send a critical message each time",
-        "You receive a verbal warning from the office",
-        "Your hourly pay is reduced for the next month"
+        "The right to refuse treatment and be informed of the consequences",
+        "The right to receive your personal phone number",
+        "The right to set caregiver pay rates",
+        "The right to waive confidentiality rules for others"
       ],
-      answer: 0
+      answer: 0  // A
     },
     {
-      q: "Your client asks you to stay an hour past your scheduled shift. What should you do?",
+      q: "A client with dementia keeps asking what time their doctor's appointment is. What is the best response?",
       options: [
-        "Stay — extra time is always paid",
-        "Notify the office on Trillian first; the extra time is paid only if the office approves it",
-        "Agree, and record the extra hour in your care notes",
-        "Refuse; caregivers may never stay late"
+        "“I've already told you three times.”",
+        "“You don't have an appointment today.”",
+        "Try to understand why they are asking and reassure them, such as “It's 9am. I'll make sure you won't be late.”",
+        "Ignore the question"
       ],
-      answer: 1
+      answer: 2  // C
     },
     {
-      q: "A client asks for your personal phone number so they can call you directly. What should you do?",
+      q: "What is the safest way to physically approach a person with dementia?",
       options: [
-        "Give it to them; it builds trust",
-        "Give them your email instead of your phone number",
-        "Share it only with the client's family",
-        "Don't share it — contact between caregivers and clients is handled by the office"
+        "From behind so you can help quickly",
+        "From the side while speaking loudly",
+        "From the front",
+        "It doesn't matter"
       ],
-      answer: 3
+      answer: 2  // C
     },
     {
-      q: "As a mandatory reporter, you suspect a client is being financially exploited but you aren't sure. What should you do?",
+      q: "A client falls and has no apparent serious injury. What should you do?",
       options: [
-        "Investigate and collect proof before saying anything",
-        "Ask the family member you suspect about it",
-        "Report it to agency management right away — when in doubt, report it",
-        "Wait until you are certain"
+        "Lift the client back up right away",
+        "Wait until the end of the shift to report it",
+        "Do not lift them. Send a critical message on Trillian and call the office immediately",
+        "Ask the client not to mention it"
       ],
-      answer: 2
+      answer: 2  // C
     },
     {
-      q: "A client with dementia says today is Tuesday, but it's actually Wednesday. Following the golden rules, what should you do?",
+      q: "A fire starts in a client's home. What should you do?",
       options: [
-        "Just nod and smile — don't contradict or argue",
-        "Gently correct them so they stay oriented",
-        "Show them a calendar to prove the date",
-        "Ask them direct questions to test their memory"
+        "Call the office first and wait for instructions",
+        "Call 911, move yourself and the client to safety if it is safe to do so, and contact the office once you are safe",
+        "Search the house for valuables",
+        "Stay put until the client decides what to do"
       ],
-      answer: 0
+      answer: 1  // B
     },
     {
-      q: "How should you physically approach a person with dementia?",
+      q: "When operating a fire extinguisher using the PASS method, what does the “A” stand for?",
       options: [
-        "From the side, so you don't block their view",
-        "From the front, because their peripheral vision is limited",
-        "From behind, quietly, so you don't disturb them",
-        "Quickly, so they don't have time to get anxious"
+        "Alert",
+        "Aim at the base of the fire",
+        "Activate the alarm",
+        "Avoid the flames"
       ],
-      answer: 1
+      answer: 1  // B
     },
     {
-      q: "Your client falls and there's no apparent serious injury. What is the correct procedure?",
+      q: "A client is choking and cannot cough, speak, or breathe. What should you do?",
       options: [
-        "Lift the client back up yourself, then tell the office",
-        "Help the client up and note the fall in WellSky at the end of your shift",
-        "Leave the client on the floor and wait for family to arrive",
-        "Don't lift them — send a critical message on Trillian and call the office, which will call the local lift assist"
+        "Give them water to wash it down",
+        "Call 911 and start the choking first aid techniques you were trained in",
+        "Wait for the office to call you back",
+        "Lay them flat and leave to find help"
       ],
-      answer: 3
+      answer: 1  // B
     },
     {
-      q: "According to infection-control guidelines, how should you treat blood and bodily fluids?",
+      q: "A client suddenly has a drooping face and slurred speech. What should you do?",
       options: [
-        "As infectious only if the client shows symptoms",
-        "As potentially infectious at all times, using Standard Precautions",
-        "As safe, as long as you wash your hands afterwards",
-        "As infectious only if the client has a known diagnosis such as MRSA"
+        "Let them rest and check again in an hour",
+        "Call 911 immediately and note the time the symptoms started",
+        "Give them aspirin from the medicine cabinet",
+        "Call the office and wait for instructions before doing anything else"
       ],
-      answer: 1
+      answer: 1  // B
+    },
+    {
+      q: "A client gets a small burn from a hot pan. The skin is red but not blistered. What should you do first?",
+      options: [
+        "Put ice directly on the burn",
+        "Cool the burn under cool running water for several minutes",
+        "Spread butter on it",
+        "Pop any blisters that form"
+      ],
+      answer: 1  // B
+    },
+    {
+      q: "You find a client on the floor who does not respond and is not breathing normally. What should you do?",
+      options: [
+        "Call the office and wait for instructions",
+        "Call 911 right away and follow the dispatcher's instructions, starting CPR if you are trained",
+        "Give them water and sit them up",
+        "Wait a few minutes to see if they wake up"
+      ],
+      answer: 1  // B
+    },
+    {
+      q: "A client has a seizure while sitting in a chair. What should you do?",
+      options: [
+        "Hold them down so they stop shaking",
+        "Put a spoon or cloth in their mouth",
+        "Stay with them, move hazards away, protect their head, note the time, and call 911 as needed",
+        "Throw cold water on their face"
+      ],
+      answer: 2  // C
+    },
+    {
+      q: "A client reports chest pain and pressure, and feels sweaty and short of breath. What should you do?",
+      options: [
+        "Tell them to lie down and rest for an hour",
+        "Call 911 right away, then notify the office",
+        "Give them food and water and watch for changes",
+        "Wait for a family member to arrive"
+      ],
+      answer: 1  // B
     }
   ]
 };

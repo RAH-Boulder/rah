@@ -4,21 +4,38 @@
   const cfg = window.TRAINING_CONFIG;
   const $ = (id) => document.getElementById(id);
   const total = cfg.questions.length;
+  const passMark = Math.ceil((total * cfg.passPercent) / 100);
   const formSubmitUrl = `https://formsubmit.co/ajax/${encodeURIComponent(cfg.notifyEmail)}`;
   let result = null;
 
   // ----- Setup -----
   document.title = cfg.title;
   $("page-title").textContent = cfg.title;
-  $("pass-mark-text").textContent = `${cfg.passMark} of ${total}`;
+  $("pass-mark-text").textContent = `${passMark} of ${total}`;
   $("video-frame").src = `https://drive.google.com/file/d/${cfg.driveVideoId}/preview`;
   $("video-link").href = `https://drive.google.com/file/d/${cfg.driveVideoId}/view`;
-  $("form-title-h").textContent = `3. ${cfg.formTitle}`;
-  cfg.formText.forEach((para) => {
-    const p = document.createElement("p");
-    p.textContent = para;
-    $("form-text").append(p);
-  });
+  $("form-title-h").textContent = `3. ${cfg.form.title}`;
+  $("form-text").append(...formContent());
+
+  // The acknowledgement form's text, built from cfg.form.
+  function formContent() {
+    const f = cfg.form;
+    const el = (tag, text) => {
+      const n = document.createElement(tag);
+      if (text) n.textContent = text;
+      return n;
+    };
+    const list = (items) => {
+      const ol = el("ol");
+      items.forEach((t) => ol.append(el("li", t)));
+      return ol;
+    };
+    const meta = el("p");
+    meta.className = "form-meta";
+    meta.append(el("strong", f.org), el("br"), `Total length of training: ${f.length}`);
+    return [meta, el("h3", "Topics covered"), list(f.topics),
+      el("h3", "Acknowledgement"), el("p", f.intro), list(f.statements)];
+  }
 
   const qBox = $("questions");
   cfg.questions.forEach((item, i) => {
@@ -108,9 +125,9 @@
       else $(`q${i}`).classList.add("wrong");
     });
 
-    if (score < cfg.passMark) {
+    if (score < passMark) {
       $("fail-score").textContent = `${score} of ${total} correct`;
-      $("fail-need").textContent = cfg.passMark;
+      $("fail-need").textContent = passMark;
       $("fail-box").hidden = false;
       $("fail-box").scrollIntoView({ behavior: "smooth" });
       return;
@@ -200,17 +217,14 @@
   function showDone() {
     const dateText = result.date.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
     const scoreText = `${result.score}/${total}`;
-    $("doc-org").textContent = cfg.orgName;
-    $("doc-title").textContent = cfg.formTitle;
-    $("doc-body").replaceChildren(...cfg.formText.map((t) => {
-      const p = document.createElement("p");
-      p.textContent = t;
-      return p;
-    }));
+    $("doc-org").textContent = cfg.form.org;
+    $("doc-title").textContent = cfg.form.title;
+    $("doc-body").replaceChildren(...formContent().slice(1));
     $("doc-name").textContent = result.signedName;
     $("doc-email").textContent = result.email;
     $("doc-course").textContent = cfg.title;
-    $("doc-score").textContent = `${scoreText} (pass mark ${cfg.passMark}/${total})`;
+    $("doc-length").textContent = cfg.form.length;
+    $("doc-score").textContent = `${scoreText} (pass mark ${passMark}/${total})`;
     $("doc-date").textContent = dateText;
     $("doc-id").textContent = result.id;
     $("doc-sig-img").src = result.signature;
@@ -219,11 +233,11 @@
     const body =
 `Hello,
 
-I have completed the ${cfg.title}, passed the quiz and signed the ${cfg.formTitle}.
+I have completed the ${cfg.title}, passed the quiz and signed the ${cfg.form.title}.
 
 Name: ${result.signedName}
 Email: ${result.email}
-Score: ${scoreText} (pass mark ${cfg.passMark}/${total})
+Score: ${scoreText} (pass mark ${passMark}/${total})
 Date signed: ${dateText}
 Record ID: ${result.id}
 
@@ -260,9 +274,9 @@ ${result.signedName}`;
       "Date signed": dateText,
       "Record ID": result.id,
       Training: cfg.title,
-      Form: cfg.formTitle,
+      Form: cfg.form.title,
       "Agreed to form": "Yes",
-      "Form text": cfg.formText.join("\n\n")
+      "Confirmed": cfg.form.statements.join("\n")
     })
       .then(() => {
         status.className = "status ok";

@@ -129,7 +129,7 @@ input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 
 
 .form-text { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 14px 18px; margin: 10px 0 18px; }
-.form-text p { margin: 0 0 10px; }
+.form-text p { margin: 0 0 6px; }
 .form-text p:last-child { margin: 0; }
 .check { display: flex; gap: 10px; align-items: flex-start; margin: 0 0 16px; font-weight: 600; cursor: pointer; }
 .check input { margin-top: 5px; width: 18px; height: 18px; accent-color: var(--accent); }
@@ -156,3 +156,9 @@ textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
   .doc-holder { margin: 0; }
   .signed-doc { border: 0; padding: 0; max-width: none; }
 }
+
+/* Acknowledgement form text, on the signing step and in the signed form */
+.form-text h3, .doc-body h3 { font-size: 1rem; margin: 14px 0 6px; }
+.form-text ol, .doc-body ol { margin: 0 0 10px; padding-left: 22px; }
+.form-text li, .doc-body li { margin: 3px 0; }
+.form-meta { margin: 0 0 6px; }

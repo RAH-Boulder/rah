@@ -25,8 +25,8 @@ Everything editable is in `config.js`:
   topics and the statements they confirm.
 - `youtubeId` — the training video on YouTube (Unlisted, embedding allowed). The site
   counts the seconds actually played (skipping ahead doesn't count) and saves progress on
-  the device. It never locks the quiz; the percentage watched just goes into the email,
-  the signed PDF and the sheet. If YouTube can't load at all, it records "Not tracked".
+  the device. It never locks the quiz; the percentage watched just goes into the email
+  and the sheet (not the signed PDF). If YouTube can't load at all, it records "Not tracked".
 - `driveVideoId` — fallback Google Drive video, used only if `youtubeId` is empty (no
   watch tracking). Share it as "Anyone with the link can view".
 

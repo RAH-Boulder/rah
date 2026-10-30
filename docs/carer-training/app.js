@@ -4,7 +4,7 @@
   // Must match data-version in index.html. Bump both (and the ?v= on the
   // style/script links) on every change: right after an update, a browser can
   // otherwise pair a cached old page with this new script, which breaks the quiz.
-  const VERSION = "2026-10-26.2";
+  const VERSION = "2026-10-30.1";
   if (document.documentElement.dataset.version !== VERSION) {
     // Load the page again under a new URL so the browser can't use its cached copy.
     const key = "carer-training-reloaded-for";
@@ -519,6 +519,19 @@
 
     const status = $("notify-status");
     if (!cfg.autoSend) { status.hidden = true; return; }
+    // Until the email has actually gone, say so and keep the caregiver on the
+    // page: closing it cancels the send (this is how completions were lost).
+    const keepOpen = (e) => { e.preventDefault(); e.returnValue = ""; return ""; };
+    const sending = (on) => {
+      $("done-card").classList.toggle("sending", on);
+      $("done-title").textContent = on ? "Almost done — sending your signed form…" : "All done — thank you!";
+      $("done-text").textContent = on
+        ? "Please keep this page open until it says \u201cAll done\u201d. This usually takes less than a minute."
+        : "Your training is complete and your form is signed. Download or print a copy for your records.";
+      if (on) window.addEventListener("beforeunload", keepOpen);
+      else window.removeEventListener("beforeunload", keepOpen);
+    };
+    sending(true);
     status.className = "status warn";
     status.textContent = "Sending your signed form to the office…";
     const record = {
@@ -555,7 +568,8 @@
             status.className = "status warn";
             status.textContent = "Your completion record was sent, but the signed PDF couldn't be attached — please download it and send it to the office.";
           }, fail)
-      );
+      )
+      .finally(() => sending(false));
   }
 
   $("print").onclick = () => window.print();

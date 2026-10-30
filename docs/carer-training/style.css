@@ -219,3 +219,8 @@ textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 .watch-text { margin: 6px 0 0; font-weight: 600; font-size: .95rem; }
 .watch.done .watch-text { color: var(--good); }
 .btn:disabled { cursor: not-allowed; }
+
+/* Last page while the signed form is still being emailed */
+.notice.sending { border-color: var(--gold); background: var(--card); }
+.notice.sending h2 { color: var(--gold); }
+.notice.sending #done-text { font-weight: 700; }

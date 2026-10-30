@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-version="2026-10-26.2">
+<html lang="en" data-version="2026-10-30.1">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=2026-10-26.2">
+  <link rel="stylesheet" href="style.css?v=2026-10-30.1">
 </head>
 <body>
   <header class="site-header">
@@ -128,9 +128,9 @@
 
     <!-- Step 4: done -->
     <section id="step-done" hidden>
-      <div class="card notice">
-        <h2>All done — thank you!</h2>
-        <p>Your training is complete and your form is signed. Download or print a copy for your records.</p>
+      <div class="card notice" id="done-card">
+        <h2 id="done-title">All done — thank you!</h2>
+        <p id="done-text">Your training is complete and your form is signed. Download or print a copy for your records.</p>
         <p id="notify-status" class="status"></p>
         <div class="actions">
           <button class="btn primary" id="download-pdf">Download signed form (PDF)</button>
@@ -192,7 +192,7 @@
 
   <!-- html2pdf.js 0.10.1 (MIT), copied from the official npm package so no outside site can change it -->
   <script src="vendor/html2pdf.bundle.min.js"></script>
-  <script src="config.js?v=2026-10-26.2"></script>
-  <script src="app.js?v=2026-10-26.2"></script>
+  <script src="config.js?v=2026-10-30.1"></script>
+  <script src="app.js?v=2026-10-30.1"></script>
 </body>
 </html>

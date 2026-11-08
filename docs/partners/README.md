@@ -33,10 +33,16 @@ added there show up for everyone on their next visit; partners added on the site
 synced to the sheet (or kept on that device if it isn't connected). You can also add
 partners as rows in the sheet's Partners tab.
 
+## Route start places
+
+Extra choices under **Route → Start from** (like 4810 Riverbend Rd) are in `config.js`
+as `startPlaces`, each with its address and map position.
+
 ## Services used (free, no keys)
 
-- Addresses are turned into map positions with OpenStreetMap's Nominatim, once per
-  address, then saved in the browser.
+- Map positions for the partners in `partners.js` are saved in that file. Only partners
+  added later (or with a changed address) are looked up with OpenStreetMap's Nominatim,
+  once, then saved in the browser.
 - Driving times come from the public OSRM router. If it's unavailable, the route uses
   straight-line distances instead.
 - Navigation opens in Google Maps.

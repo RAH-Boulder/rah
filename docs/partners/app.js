@@ -148,6 +148,10 @@
     else if (sort === "city") list.sort((a, b) => a.city.localeCompare(b.city) || byName(a, b));
     else if (sort === "stale") list.sort((a, b) => lv[a.id].localeCompare(lv[b.id]) || byName(a, b));
     else if (sort === "recent") list.sort((a, b) => lv[b.id].localeCompare(lv[a.id]) || byName(a, b));
+    else if (sort === "route") { // route stops first, in driving order; then everyone else by city
+      const pos = id => { const i = state.route.indexOf(id); return i < 0 ? Infinity : i; };
+      list.sort((a, b) => (pos(a.id) - pos(b.id)) || a.city.localeCompare(b.city) || byName(a, b));
+    }
     return list;
   }
 
@@ -161,8 +165,9 @@
       cls = daysAgo(v.when) <= 14 ? "recent" : "";
     }
     const inRoute = state.route.includes(p.id);
+    const num = state.settings.sort === "route" && inRoute ? `<span class="stop-num">${state.route.indexOf(p.id) + 1}</span>` : "";
     return `<div class="partner">
-      <button type="button" class="partner-main" data-open="${esc(p.id)}">
+      ${num}<button type="button" class="partner-main" data-open="${esc(p.id)}">
         <span class="partner-name">${esc(p.name)}</span>
         <span class="partner-addr">${esc(fullAddress(p))}</span>
         <span class="partner-meta ${cls}">${esc(meta)}</span>
@@ -192,6 +197,10 @@
         html += partnerRow(p);
       });
       box.innerHTML = html;
+    } else if (state.settings.sort === "route") {
+      const inR = list.filter(p => state.route.includes(p.id)), rest = list.filter(p => !state.route.includes(p.id));
+      box.innerHTML = (inR.length ? `<h2 class="city-head">Your route, in driving order</h2>` + inR.map(partnerRow).join("") : "") +
+        (rest.length ? `<h2 class="city-head">Not in route</h2>` + rest.map(partnerRow).join("") : "");
     } else {
       box.innerHTML = list.map(partnerRow).join("");
     }
@@ -758,7 +767,9 @@
       const seq = start ? [0, ...order] : order;
       for (let i = 1; i < seq.length; i++) legs.push({ km: tm.dist[seq[i - 1]][seq[i]], sec: tm.time[seq[i - 1]][seq[i]] });
       if (start && endMode === "return") legs.push({ km: tm.dist[seq[seq.length - 1]][0], sec: tm.time[seq[seq.length - 1]][0] });
-      state.route = stops; save();
+      state.route = stops;
+      state.settings.sort = "route"; sortEl.value = "route"; // Partners tab follows the driving order too
+      save();
       routeResult = { stops, start, legs, real: tm.real, endMode, approx };
       status.textContent = "";
       renderRoute();

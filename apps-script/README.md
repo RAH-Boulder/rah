@@ -49,8 +49,8 @@ everyone else's back. The sheet gets two tabs (created on the first sync):
 
 ## Set it up (once, about 5 minutes)
 
-1. Open the sheet:
-   https://docs.google.com/spreadsheets/d/1Q1X3haayr442C473qcWx1vCyIvRGo6oluwb00U_3QXY/edit
+1. Open the Google Sheet for referral partner visits. Keep it private: **Share → General
+   access → Restricted**, and add teammates by email. The site doesn't need link sharing.
 2. Click **Extensions → Apps Script**.
 3. Delete everything in the editor, paste in all of `PartnersSheet.gs`, and click the save icon.
 4. Choose a passcode (something long you don't use elsewhere). Click the gear

@@ -1,0 +1,9 @@
+{
+  "name": "Referral Partners",
+  "short_name": "Partners",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f3ee",
+  "theme_color": "#b5303a"
+}

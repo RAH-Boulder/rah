@@ -12,13 +12,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=1">
+  <link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
   <header class="top">
     <div class="wrap top-row">
       <h1>Referral Partners</h1>
-      <button type="button" class="btn small ghost" id="add-partner-btn">+ Add partner</button>
+      <div class="top-actions">
+        <button type="button" class="sync-pill" id="sync-pill" hidden></button>
+        <button type="button" class="btn small ghost" id="add-partner-btn">+ Add partner</button>
+      </div>
     </div>
     <nav class="wrap tabs" role="tablist">
       <button role="tab" data-tab="partners" aria-selected="true">Partners</button>
@@ -113,9 +116,29 @@
       </div>
       <div id="visit-list"></div>
 
-      <div class="card data-card">
-        <h2>Your data</h2>
-        <p class="small">Visits and notes are saved in this browser on this device only. Download a backup now and then, and restore it to move your data to another phone or computer.</p>
+      <div class="card data-card" id="sync-card">
+        <h2>Google Sheet</h2>
+        <p class="small" id="sync-status"></p>
+        <form id="sync-form" autocomplete="off">
+          <p class="small muted">Connect once on each phone or computer. Visits, notes and partner changes then sync between all of them and the sheet.</p>
+          <label id="sync-url-wrap">Web app URL
+            <input type="text" id="sync-url" placeholder="https://script.google.com/macros/s/…/exec" inputmode="url">
+          </label>
+          <label>Passcode
+            <input type="password" id="sync-key" required autocomplete="current-password">
+          </label>
+          <button type="submit" class="btn small">Connect</button>
+        </form>
+        <div id="sync-connected" class="route-buttons">
+          <button type="button" class="btn small" id="sync-now-btn">Sync now</button>
+          <a class="btn small ghost" id="sheet-link" target="_blank" rel="noopener">Open the sheet</a>
+          <button type="button" class="link danger" id="sync-off-btn">Disconnect this device</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Backups</h2>
+        <p class="small">Everything is also saved in this browser, so the site works without signal. A backup file is an extra copy, and can move your data to a device that isn't connected to the sheet.</p>
         <p class="small muted" id="backup-info"></p>
         <div class="route-buttons">
           <button type="button" class="btn small" id="backup-btn">Download backup</button>
@@ -238,7 +261,8 @@
 
   <div id="toast" role="status" aria-live="polite" hidden></div>
 
-  <script src="partners.js?v=1"></script>
-  <script src="app.js?v=1"></script>
+  <script src="config.js?v=2"></script>
+  <script src="partners.js?v=2"></script>
+  <script src="app.js?v=2"></script>
 </body>
 </html>

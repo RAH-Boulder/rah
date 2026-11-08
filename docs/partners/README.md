@@ -15,16 +15,23 @@ A small static site for visiting referral partners (like Outfield). No server, n
 
 ## Where data is kept
 
-Visits, notes and partner changes are saved **in the browser on that device only**.
-Use **Visits → Download backup** regularly, and **Restore backup** to move data to
-another device. Clearing the browser's site data erases it. On iPhone, add the page to the
-home screen (Share → Add to Home Screen) so Safari doesn't clear it after a week unused.
+Everything is saved in the browser first, so the site works without signal. When a device is
+connected to the **Google Sheet** (Visits tab → Google Sheet), changes sync to the sheet a
+few seconds after you make them and whenever the site is opened, so all your devices share
+the same visits, notes and partner list. Setup: `apps-script/README.md` ("Referral
+partners sheet"). The badge next to **+ Add partner** shows whether this device is synced.
+
+The sheet's address and the script's URL are in `config.js`.
+
+**Visits → Download backup** saves a file copy; **Restore backup** loads it (and sends it
+to the sheet if connected).
 
 ## Change the partner list
 
 `partners.js` is the starting list (from `Outfield_Addresses_Upload.csv`). New entries
 added there show up for everyone on their next visit; partners added on the site are only
-on that device.
+synced to the sheet (or kept on that device if it isn't connected). You can also add
+partners as rows in the sheet's Partners tab.
 
 ## Services used (free, no keys)
 

@@ -17,6 +17,8 @@
     s.notes = s.notes && typeof s.notes === "object" ? s.notes : {};
     s.removed = Array.isArray(s.removed) ? s.removed : [];
     s.route = Array.isArray(s.route) ? s.route : [];
+    s.deletedVisits = s.deletedVisits && typeof s.deletedVisits === "object" ? s.deletedVisits : {}; // id -> when deleted
+    s.removedAt = s.removedAt && typeof s.removedAt === "object" ? s.removedAt : {}; // partner id -> when removed
     s.settings = Object.assign({ tab: "partners", sort: "city", city: "", startMode: "here", startAddress: "", endMode: "anywhere" }, s.settings || {});
     // Add any partners from partners.js that aren't saved yet (and weren't removed).
     const have = new Set(s.partners.map(p => p.id));
@@ -26,10 +28,13 @@
     return s;
   }
   let state = loadState();
-  function save() {
+  // save(true) = your data changed, so send it to the Google Sheet soon.
+  function save(changed) {
     try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
     catch (e) { toast("Couldn't save — your browser storage may be full or turned off."); }
+    if (changed) scheduleSync();
   }
+  const stamp = () => new Date().toISOString();
   let geoCache = {};
   try { geoCache = JSON.parse(localStorage.getItem(GEO_KEY)) || {}; } catch (e) { geoCache = {}; }
   function saveGeo() { try { localStorage.setItem(GEO_KEY, JSON.stringify(geoCache)); } catch (e) { /* ignore */ } }
@@ -219,7 +224,7 @@
     else if (t.dataset.visit) { const v = state.visits.find(x => x.id === t.dataset.visit); if (v) openVisit(v.partnerId, v); }
     else if (t.dataset.fuDone) {
       const v = state.visits.find(x => x.id === t.dataset.fuDone);
-      if (v) { v.followUpDone = true; save(); renderVisits(); toast("Follow-up marked done."); }
+      if (v) { v.followUpDone = true; v.updated = stamp(); save(true); renderVisits(); toast("Follow-up marked done."); }
     } else if (t.dataset.removeStop) {
       toggleRoute(t.dataset.removeStop); renderRoute(); renderBadges();
     } else if (t.dataset.route) {
@@ -268,7 +273,8 @@
   $("#pd-notes").addEventListener("input", e => {
     const val = e.target.value;
     if (val.trim()) state.notes[currentPartner] = val; else delete state.notes[currentPartner];
-    save();
+    const p = byId(currentPartner); if (p) p.updated = stamp();
+    save(true);
   });
   $("#pd-edit").addEventListener("click", () => openEdit(currentPartner));
   pd.addEventListener("close", () => { currentPartner = null; refreshAll(); });
@@ -329,16 +335,18 @@
       followUpNote: vf.elements.followUpNote.value.trim(),
       followUpDone: vf.elements.followUpDone.checked
     };
-    if (editingVisit) Object.assign(editingVisit, data, { updated: new Date().toISOString() });
-    else state.visits.push(Object.assign({ id: uid(), partnerId: visitPartner, partnerName: p ? p.name : "", created: new Date().toISOString() }, data));
-    save(); vd.close();
+    const now = stamp();
+    if (editingVisit) Object.assign(editingVisit, data, { updated: now });
+    else state.visits.push(Object.assign({ id: uid(), partnerId: visitPartner, partnerName: p ? p.name : "", created: now, updated: now }, data));
+    save(true); vd.close();
     toast(editingVisit ? "Visit updated." : `Checked in at ${p ? p.name : "partner"}.`);
     renderPartnerDetail(); refreshAll();
   });
   $("#vd-delete").addEventListener("click", () => {
     if (!editingVisit || !confirm("Delete this visit? This can't be undone.")) return;
     state.visits = state.visits.filter(v => v !== editingVisit);
-    save(); vd.close(); toast("Visit deleted.");
+    state.deletedVisits[editingVisit.id] = stamp();
+    save(true); vd.close(); toast("Visit deleted.");
     renderPartnerDetail(); refreshAll();
   });
 
@@ -366,13 +374,14 @@
       state: ef.elements.state.value.trim().toUpperCase(), zip: ef.elements.zip.value.trim()
     };
     if (editingPartner) {
-      Object.assign(editingPartner, data);
-      state.visits.forEach(v => { if (v.partnerId === editingPartner.id) v.partnerName = data.name; });
+      const now = stamp();
+      Object.assign(editingPartner, data, { updated: now });
+      state.visits.forEach(v => { if (v.partnerId === editingPartner.id && v.partnerName !== data.name) { v.partnerName = data.name; v.updated = now; } });
       if (currentPartner === editingPartner.id) openPartner(editingPartner.id);
     } else {
-      state.partners.push(Object.assign({ id: "p-" + uid() }, data));
+      state.partners.push(Object.assign({ id: "p-" + uid(), updated: stamp() }, data));
     }
-    routeResult = null; save(); ed.close();
+    routeResult = null; save(true); ed.close();
     toast(editingPartner ? "Partner updated." : `Added ${data.name}.`);
     refreshAll();
   });
@@ -381,8 +390,9 @@
     if (!p || !confirm(`Remove ${p.name} from your list? Past visits stay in your visit log.`)) return;
     state.partners = state.partners.filter(x => x !== p);
     if (!state.removed.includes(p.id)) state.removed.push(p.id);
+    state.removedAt[p.id] = stamp();
     state.route = state.route.filter(id => id !== p.id);
-    routeResult = null; save(); ed.close();
+    routeResult = null; save(true); ed.close();
     if (pd.open) pd.close();
     toast(`Removed ${p.name}.`);
     refreshAll();
@@ -441,7 +451,9 @@
   });
   $("#backup-btn").addEventListener("click", () => {
     state.settings.lastBackup = today(); save();
-    download(`Partner CRM backup ${today()}.json`, JSON.stringify({ app: "rah-partners", version: 1, saved: new Date().toISOString(), state }, null, 2), "application/json");
+    const copy = JSON.parse(JSON.stringify(state));
+    delete copy.settings.syncKey; delete copy.settings.syncUrl; // never put the passcode in a file
+    download(`Partner CRM backup ${today()}.json`, JSON.stringify({ app: "rah-partners", version: 1, saved: new Date().toISOString(), state: copy }, null, 2), "application/json");
     renderVisits();
   });
   $("#restore-input").addEventListener("change", async e => {
@@ -452,8 +464,15 @@
       if (!data || data.app !== "rah-partners" || !data.state) throw new Error("not a backup");
       const n = (data.state.visits || []).length;
       if (!confirm(`Replace everything on this device with the backup from ${fmtDate(data.saved.slice(0, 10))} (${n} visits)?`)) return;
+      const keep = { syncKey: state.settings.syncKey, syncUrl: state.settings.syncUrl };
       localStorage.setItem(STORE_KEY, JSON.stringify(data.state));
       state = loadState(); routeResult = null;
+      Object.assign(state.settings, keep);
+      // Make restored records count as the newest, so they go to the sheet.
+      const now = stamp();
+      state.visits.forEach(v => { v.updated = now; });
+      state.partners.forEach(p => { p.updated = now; });
+      save(true);
       sortEl.value = state.settings.sort;
       toast("Backup restored.");
       showTab("visits");
@@ -750,6 +769,172 @@
     }
   });
 
+  // ---------- Google Sheet sync ----------
+  // Every device sends all its records; the sheet keeps the newest copy of each and sends
+  // everything back. "Newest" is decided by each record's `updated` time.
+  const CONFIG = window.PARTNERS_CONFIG || {};
+  const syncUrl = () => CONFIG.sheetUrl || state.settings.syncUrl || "";
+  const syncOn = () => !!(syncUrl() && state.settings.syncKey);
+  let syncTimer = null, syncing = false, syncAgain = false, syncError = "";
+
+  function scheduleSync(delay) {
+    if (!syncOn()) return;
+    setSyncPill("pending");
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(syncNow, delay == null ? 2500 : delay);
+  }
+
+  function payload() {
+    const visits = state.visits.map(v => {
+      const p = byId(v.partnerId);
+      return Object.assign({}, v, { partnerName: p ? p.name : v.partnerName, city: p ? p.city : (v.city || ""), updated: v.updated || v.created || "" });
+    });
+    Object.keys(state.deletedVisits).forEach(id => visits.push({ id, deleted: true, updated: state.deletedVisits[id] }));
+    const partners = state.partners.map(p => Object.assign({}, p, { notes: state.notes[p.id] || "", updated: p.updated || "" }));
+    state.removed.forEach(id => partners.push({ id, removed: true, updated: state.removedAt[id] || "" }));
+    return { key: state.settings.syncKey, action: "sync", visits, partners };
+  }
+
+  function applyServer(res) {
+    // Visits
+    const localV = new Map(state.visits.map(v => [v.id, v]));
+    (res.visits || []).forEach(sv => {
+      if (!sv.id) return;
+      const lv = localV.get(sv.id), su = sv.updated || "";
+      if (sv.deleted) {
+        if (lv && (lv.updated || lv.created || "") <= su) { localV.delete(sv.id); }
+        if (!lv || (lv.updated || lv.created || "") <= su) state.deletedVisits[sv.id] = su;
+        return;
+      }
+      const tomb = state.deletedVisits[sv.id];
+      if (tomb && tomb >= su) return; // deleted here after the sheet's copy
+      if (tomb) delete state.deletedVisits[sv.id];
+      if (!lv || su >= (lv.updated || lv.created || "")) {
+        const rec = { id: sv.id, partnerId: sv.partnerId || "", partnerName: sv.partnerName || "", when: sv.when || "", type: sv.type || "", contact: sv.contact || "",
+          notes: sv.notes || "", followUp: sv.followUp || "", followUpNote: sv.followUpNote || "", followUpDone: !!sv.followUpDone, created: sv.created || "", updated: su };
+        if (rec.when) localV.set(sv.id, rec);
+      }
+    });
+    state.visits = [...localV.values()];
+    // Partners
+    const localP = new Map(state.partners.map(p => [p.id, p]));
+    (res.partners || []).forEach(sp => {
+      if (!sp.id) return;
+      const lp = localP.get(sp.id), su = sp.updated || "";
+      const removedHere = state.removed.includes(sp.id);
+      if (sp.removed) {
+        if (!lp || (lp.updated || "") <= su) {
+          localP.delete(sp.id);
+          if (!removedHere) state.removed.push(sp.id);
+          state.removedAt[sp.id] = su;
+          state.route = state.route.filter(id => id !== sp.id);
+        }
+        return;
+      }
+      if (removedHere) {
+        if ((state.removedAt[sp.id] || "") >= su) return; // removed here more recently
+        state.removed = state.removed.filter(id => id !== sp.id);
+        delete state.removedAt[sp.id];
+      }
+      if (!lp || su >= (lp.updated || "")) {
+        if (!sp.name) return;
+        const rec = { id: sp.id, name: sp.name, address: sp.address || "", city: sp.city || "", state: sp.state || "CO", zip: sp.zip || "", updated: su };
+        if (lp) Object.assign(lp, rec); else localP.set(sp.id, rec);
+        if (sp.notes) state.notes[sp.id] = sp.notes; else delete state.notes[sp.id];
+      }
+    });
+    state.partners = [...localP.values()];
+  }
+
+  async function syncNow(manual) {
+    clearTimeout(syncTimer);
+    if (!syncOn()) return;
+    if (syncing) { syncAgain = true; return; }
+    if (!navigator.onLine) { syncError = "offline"; setSyncPill("offline"); return; }
+    syncing = true; setSyncPill("syncing");
+    try {
+      const res = await fetch(syncUrl(), {
+        method: "POST", redirect: "follow",
+        headers: { "Content-Type": "text/plain;charset=utf-8" }, // plain text avoids a CORS preflight Apps Script can't answer
+        body: JSON.stringify(payload())
+      });
+      const j = await res.json();
+      if (!j.ok) {
+        if (j.error === "passcode") { delete state.settings.syncKey; save(); syncError = "passcode"; toast("The Google Sheet passcode is wrong. Enter it again in Visits → Google Sheet."); }
+        else if (j.error === "locked") syncError = "locked";
+        else syncError = j.error || "error";
+        setSyncPill("error"); renderSyncCard(); return;
+      }
+      applyServer(j); // edits made here while waiting are newer, so they survive the merge
+      state.settings.lastSync = stamp(); syncError = "";
+      save();
+      if (manual) toast("Synced with Google Sheet.");
+      if (!document.querySelector("dialog[open]")) refreshAll();
+      setSyncPill("ok");
+    } catch (e) {
+      syncError = "network"; setSyncPill("error");
+      if (manual) toast("Couldn't reach the Google Sheet. Your changes are saved here and will sync later.");
+    } finally {
+      syncing = false;
+      renderSyncCard();
+      if (syncAgain) { syncAgain = false; scheduleSync(500); }
+    }
+  }
+
+  function setSyncPill(st) {
+    const el = $("#sync-pill");
+    if (!syncOn()) { el.hidden = true; return; }
+    el.hidden = false;
+    const map = { ok: ["✓ Synced", "ok"], pending: ["Saving…", ""], syncing: ["Syncing…", ""], offline: ["Offline", "bad"], error: ["Not synced", "bad"] };
+    const [txt, cls] = map[st] || map.ok;
+    el.textContent = txt; el.className = "sync-pill " + cls;
+  }
+
+  function renderSyncCard() {
+    const on = syncOn();
+    $("#sync-form").hidden = on;
+    $("#sync-connected").hidden = !on;
+    $("#sync-url-wrap").hidden = !!CONFIG.sheetUrl;
+    const link = $("#sheet-link");
+    if (CONFIG.sheetLink) { link.href = CONFIG.sheetLink; link.hidden = false; } else link.hidden = true;
+    let msg;
+    if (!on) msg = state.settings.syncKey === undefined && syncError === "passcode" ? "Wrong passcode — try again." : "Not connected. Visits are only on this device.";
+    else if (syncError === "network" || syncError === "offline") msg = "Couldn't reach the sheet. Changes are saved here and will sync when you're back online.";
+    else if (syncError === "locked") msg = "Too many wrong passcodes were tried. Wait 15 minutes and tap Sync now.";
+    else if (syncError === "not set up") msg = "The sheet's script has no PASSCODE set yet. See the setup steps.";
+    else if (syncError) msg = "The sheet reported a problem: " + syncError;
+    else msg = state.settings.lastSync ? `Connected. Last synced ${new Date(state.settings.lastSync).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}.` : "Connected.";
+    $("#sync-status").textContent = msg;
+  }
+
+  $("#sync-form").addEventListener("submit", e => {
+    e.preventDefault();
+    const key = $("#sync-key").value.trim();
+    const url = $("#sync-url").value.trim();
+    if (!CONFIG.sheetUrl) {
+      if (!/^https:\/\/script\.google(usercontent)?\.com\//.test(url)) { toast("Paste the web app URL from Apps Script (it starts with https://script.google.com/)."); return; }
+      state.settings.syncUrl = url;
+    }
+    if (!key) return;
+    state.settings.syncKey = key; syncError = "";
+    $("#sync-key").value = "";
+    save(); renderSyncCard();
+    syncNow(true);
+  });
+  $("#sync-now-btn").addEventListener("click", () => syncNow(true));
+  $("#sync-off-btn").addEventListener("click", () => {
+    if (!confirm("Stop syncing this device? Your data stays here and in the sheet.")) return;
+    delete state.settings.syncKey; save(); setSyncPill(); renderSyncCard();
+  });
+  $("#sync-pill").addEventListener("click", () => { showTab("visits"); $("#sync-card").scrollIntoView({ behavior: "smooth" }); });
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && syncOn()) {
+      const last = state.settings.lastSync ? Date.parse(state.settings.lastSync) : 0;
+      if (Date.now() - last > 60000) syncNow();
+    }
+  });
+  window.addEventListener("online", () => syncOn() && syncNow());
+
   // ---------- Start ----------
   function refreshAll() {
     const tab = state.settings.tab;
@@ -759,5 +944,7 @@
     renderBadges();
   }
   save();
+  renderSyncCard(); setSyncPill("ok");
+  if (syncOn()) syncNow();
   showTab(["partners", "route", "visits"].includes(state.settings.tab) ? state.settings.tab : "partners");
 })();

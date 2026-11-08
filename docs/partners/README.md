@@ -21,7 +21,7 @@ few seconds after you make them and whenever the site is opened, so all your dev
 the same visits, notes and partner list. Setup: `apps-script/README.md` ("Referral
 partners sheet"). The badge next to **+ Add partner** shows whether this device is synced.
 
-The sheet's address and the script's URL are in `config.js`.
+The script's URL is in `config.js`. Keep the Google Sheet itself private (Share → General access → Restricted); the site doesn't need the sheet to be shared.
 
 **Visits → Download backup** saves a file copy; **Restore backup** loads it (and sends it
 to the sheet if connected).

@@ -451,7 +451,7 @@
         const late = v.followUp < today();
         return `<div class="fu-row">
           <div><button type="button" class="visit-title" data-visit="${esc(v.id)}">${esc(p ? p.name : v.partnerName)}</button>
-          <div class="small ${late ? "" : "muted"}" style="${late ? "color:var(--warn);font-weight:600" : ""}">${esc(fmtDate(v.followUp))} · ${esc(relDay(v.followUp))}${v.followUpNote ? " · " + esc(v.followUpNote) : ""}</div></div>
+          <div class="small ${late ? "late" : "muted"}">${esc(fmtDate(v.followUp))} · ${esc(relDay(v.followUp))}${v.followUpNote ? " · " + esc(v.followUpNote) : ""}</div></div>
           <button type="button" class="btn small ghost" data-fu-done="${esc(v.id)}">Done</button>
         </div>`;
       }).join("")}
@@ -466,7 +466,11 @@
   }
   [visitSearchEl, visitRangeEl, visitCityEl].forEach(el => el.addEventListener(el === visitSearchEl ? "input" : "change", renderVisits));
 
-  function csvCell(s) { s = String(s == null ? "" : s); return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; }
+  function csvCell(s) {
+    s = String(s == null ? "" : s);
+    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; // so Excel/Sheets show it as text instead of running it as a formula
+    return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  }
   $("#export-csv-btn").addEventListener("click", () => {
     const rows = [["Date", "Time", "Partner", "City", "Address", "Type", "Saw", "Notes", "Follow-up date", "Follow-up", "Follow-up done"]];
     filteredVisits().forEach(v => {

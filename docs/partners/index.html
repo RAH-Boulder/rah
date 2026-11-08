@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Referral Partners</title>
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#b5303a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Partners">
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=2">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-row">
+      <h1>Referral Partners</h1>
+      <div class="top-actions">
+        <button type="button" class="sync-pill" id="sync-pill" hidden></button>
+        <button type="button" class="btn small ghost" id="add-partner-btn">+ Add partner</button>
+      </div>
+    </div>
+    <nav class="wrap tabs" role="tablist">
+      <button role="tab" data-tab="partners" aria-selected="true">Partners</button>
+      <button role="tab" data-tab="route" aria-selected="false">Route <span class="badge" id="route-count" hidden>0</span></button>
+      <button role="tab" data-tab="visits" aria-selected="false">Visits <span class="badge alert" id="due-count" hidden>0</span></button>
+    </nav>
+  </header>
+
+  <main class="wrap">
+    <!-- Partners -->
+    <section id="tab-partners" class="tab-panel">
+      <div class="filters">
+        <input type="search" id="search" placeholder="Search by name or address" autocomplete="off" aria-label="Search partners">
+        <div class="filter-row">
+          <label>City
+            <select id="city-filter"></select>
+          </label>
+          <label>Sort
+            <select id="sort">
+              <option value="city">City, then name</option>
+              <option value="name">Name A–Z</option>
+              <option value="stale">Longest since visit</option>
+              <option value="recent">Most recently visited</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      <div class="list-actions">
+        <span id="result-count" class="muted"></span>
+        <button type="button" class="link" id="add-shown-btn">Add all shown to route</button>
+      </div>
+      <div id="partner-list"></div>
+    </section>
+
+    <!-- Route -->
+    <section id="tab-route" class="tab-panel" hidden>
+      <div class="card">
+        <h2>Plan a driving route</h2>
+        <p class="muted small">Tap <b>+ Route</b> on partners in the Partners tab to add stops, then find the best order.</p>
+        <div class="field-grid">
+          <label>Start from
+            <select id="start-mode">
+              <option value="here">My current location</option>
+              <option value="address">An address…</option>
+              <option value="none">Wherever is best (first stop)</option>
+            </select>
+          </label>
+          <label>Finish
+            <select id="end-mode">
+              <option value="anywhere">At the last stop</option>
+              <option value="return">Back where I started</option>
+            </select>
+          </label>
+        </div>
+        <label id="start-address-wrap" hidden>Start address
+          <input type="text" id="start-address" placeholder="e.g. 1234 Main St, Boulder, CO 80302">
+        </label>
+      </div>
+
+      <div id="route-stops"></div>
+
+      <div class="route-buttons">
+        <button type="button" class="btn" id="optimize-btn">Find best route</button>
+        <button type="button" class="btn ghost" id="clear-route-btn">Clear stops</button>
+      </div>
+      <p id="route-status" class="muted small" role="status"></p>
+      <div id="route-result"></div>
+    </section>
+
+    <!-- Visits -->
+    <section id="tab-visits" class="tab-panel" hidden>
+      <div id="followups"></div>
+      <div class="filters">
+        <input type="search" id="visit-search" placeholder="Search visits, notes, contacts" autocomplete="off" aria-label="Search visits">
+        <div class="filter-row">
+          <label>City
+            <select id="visit-city-filter"></select>
+          </label>
+          <label>When
+            <select id="visit-range">
+              <option value="all">All time</option>
+              <option value="7">Last 7 days</option>
+              <option value="30">Last 30 days</option>
+              <option value="90">Last 90 days</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      <div class="list-actions">
+        <span id="visit-count" class="muted"></span>
+        <button type="button" class="link" id="export-csv-btn">Download as spreadsheet (CSV)</button>
+      </div>
+      <div id="visit-list"></div>
+
+      <div class="card data-card" id="sync-card">
+        <h2>Google Sheet</h2>
+        <p class="small" id="sync-status"></p>
+        <form id="sync-form" autocomplete="off">
+          <p class="small muted">Connect once on each phone or computer. Visits, notes and partner changes then sync between all of them and the sheet.</p>
+          <label id="sync-url-wrap">Web app URL
+            <input type="text" id="sync-url" placeholder="https://script.google.com/macros/s/…/exec" inputmode="url">
+          </label>
+          <label>Passcode
+            <input type="password" id="sync-key" required autocomplete="current-password">
+          </label>
+          <button type="submit" class="btn small">Connect</button>
+        </form>
+        <div id="sync-connected" class="route-buttons">
+          <button type="button" class="btn small" id="sync-now-btn">Sync now</button>
+          <a class="btn small ghost" id="sheet-link" target="_blank" rel="noopener">Open the sheet</a>
+          <button type="button" class="link danger" id="sync-off-btn">Disconnect this device</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Backups</h2>
+        <p class="small">Everything is also saved in this browser, so the site works without signal. A backup file is an extra copy, and can move your data to a device that isn't connected to the sheet.</p>
+        <p class="small muted" id="backup-info"></p>
+        <div class="route-buttons">
+          <button type="button" class="btn small" id="backup-btn">Download backup</button>
+          <label class="btn small ghost file-btn">Restore backup
+            <input type="file" id="restore-input" accept="application/json,.json">
+          </label>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Partner detail -->
+  <dialog id="partner-dialog" aria-labelledby="pd-name">
+    <div class="dialog-inner">
+      <div class="dialog-head">
+        <div>
+          <h2 id="pd-name"></h2>
+          <p class="muted small" id="pd-address"></p>
+        </div>
+        <button type="button" class="icon-btn" data-close aria-label="Close">✕</button>
+      </div>
+      <div class="pd-actions">
+        <button type="button" class="btn" id="pd-checkin">Check in</button>
+        <button type="button" class="btn ghost" id="pd-route"></button>
+        <a class="btn ghost" id="pd-directions" target="_blank" rel="noopener">Directions</a>
+      </div>
+      <label class="pd-notes">Partner notes <span class="muted small">(contacts, best times to visit, etc.)</span>
+        <textarea id="pd-notes" rows="3" placeholder="e.g. Ask for Maria, discharge planner. Best before 11am."></textarea>
+      </label>
+      <h3>Visit history</h3>
+      <div id="pd-visits"></div>
+      <p class="pd-footer"><button type="button" class="link" id="pd-edit">Edit partner details</button></p>
+    </div>
+  </dialog>
+
+  <!-- Check-in form -->
+  <dialog id="visit-dialog" aria-labelledby="vd-title">
+    <form class="dialog-inner" id="visit-form" method="dialog">
+      <div class="dialog-head">
+        <div>
+          <h2 id="vd-title">Check in</h2>
+          <p class="muted small" id="vd-partner"></p>
+        </div>
+        <button type="button" class="icon-btn" data-close aria-label="Close">✕</button>
+      </div>
+      <div class="field-grid">
+        <label>Date and time
+          <input type="datetime-local" name="when" required>
+        </label>
+        <label>Type of visit
+          <select name="type">
+            <option>Drop-in</option>
+            <option>Scheduled meeting</option>
+            <option>Lunch &amp; learn</option>
+            <option>In-service</option>
+            <option>Dropped off materials</option>
+            <option>Phone call</option>
+            <option>Event</option>
+            <option>Other</option>
+          </select>
+        </label>
+      </div>
+      <label>Who did you see?
+        <input type="text" name="contact" placeholder="Name and role">
+      </label>
+      <label>Notes — what did you do?
+        <textarea name="notes" rows="5" placeholder="What you talked about, what you left, referrals discussed…"></textarea>
+      </label>
+      <div class="field-grid">
+        <label>Follow up on
+          <input type="date" name="followUp">
+        </label>
+        <label>Follow-up to do
+          <input type="text" name="followUpNote" placeholder="e.g. Bring brochures">
+        </label>
+      </div>
+      <label class="check" id="vd-done-wrap" hidden><input type="checkbox" name="followUpDone"> Follow-up done</label>
+      <div class="dialog-foot">
+        <button type="button" class="link danger" id="vd-delete" hidden>Delete visit</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn ghost" data-close>Cancel</button>
+        <button type="submit" class="btn" value="save">Save visit</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Add / edit partner -->
+  <dialog id="edit-dialog" aria-labelledby="ed-title">
+    <form class="dialog-inner" id="edit-form" method="dialog">
+      <div class="dialog-head">
+        <h2 id="ed-title">Add partner</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Close">✕</button>
+      </div>
+      <label>Name
+        <input type="text" name="name" required>
+      </label>
+      <label>Street address
+        <input type="text" name="address" required placeholder="e.g. 4747 Arapahoe Ave">
+      </label>
+      <div class="field-grid three">
+        <label>City
+          <input type="text" name="city" required list="city-options">
+        </label>
+        <label>State
+          <input type="text" name="state" value="CO" required>
+        </label>
+        <label>Zip
+          <input type="text" name="zip" inputmode="numeric">
+        </label>
+      </div>
+      <datalist id="city-options"></datalist>
+      <div class="dialog-foot">
+        <button type="button" class="link danger" id="ed-delete" hidden>Remove partner</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn ghost" data-close>Cancel</button>
+        <button type="submit" class="btn" value="save">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="config.js?v=3"></script>
+  <script src="partners.js?v=2"></script>
+  <script src="app.js?v=2"></script>
+</body>
+</html>

@@ -191,3 +191,13 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
 .sync-pill.bad { background: var(--warn-bg); color: var(--warn); }
 #sync-form .btn { margin-top: 4px; }
 @media (max-width: 420px) { h1 { font-size: 1.05rem; } .top-row .btn.small { padding: 0 10px; } }
+
+/* Best-route summary */
+.plan-banner {
+  display: flex; flex-direction: column; gap: 2px;
+  background: var(--good-bg); color: var(--good); border: 1px solid var(--good);
+  border-radius: 12px; padding: 12px 14px; margin: 4px 0 12px;
+}
+.plan-banner span { color: var(--ink); }
+.plan-banner.pending { background: var(--warn-bg); color: var(--warn); border-color: var(--warn); }
+.partner-leg { display: block; font-size: .8rem; font-weight: 600; margin-top: 2px; }

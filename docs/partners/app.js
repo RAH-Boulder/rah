@@ -165,12 +165,15 @@
       cls = daysAgo(v.when) <= 14 ? "recent" : "";
     }
     const inRoute = state.route.includes(p.id);
-    const num = state.settings.sort === "route" && inRoute ? `<span class="stop-num">${state.route.indexOf(p.id) + 1}</span>` : "";
+    const plan = state.settings.sort === "route" && inRoute ? currentPlan() : null;
+    const num = plan ? `<span class="stop-num" aria-label="Stop ${state.route.indexOf(p.id) + 1}">${state.route.indexOf(p.id) + 1}</span>` : "";
+    const leg = plan ? legText(stopLegs(plan)[p.id]) : "";
     return `<div class="partner">
       ${num}<button type="button" class="partner-main" data-open="${esc(p.id)}">
         <span class="partner-name">${esc(p.name)}</span>
         <span class="partner-addr">${esc(fullAddress(p))}</span>
         <span class="partner-meta ${cls}">${esc(meta)}</span>
+        ${leg ? `<span class="partner-leg">🚗 ${esc(leg)}</span>` : ""}
       </button>
       <div class="partner-btns">
         <button type="button" class="btn small" data-checkin="${esc(p.id)}">Check in</button>
@@ -199,11 +202,20 @@
       box.innerHTML = html;
     } else if (state.settings.sort === "route") {
       const inR = list.filter(p => state.route.includes(p.id)), rest = list.filter(p => !state.route.includes(p.id));
-      box.innerHTML = (inR.length ? `<h2 class="city-head">Your route, in driving order</h2>` + inR.map(partnerRow).join("") : "") +
+      const plan = currentPlan();
+      let head = "";
+      if (inR.length && plan) {
+        head = `<div class="plan-banner"><b>✓ Best driving route</b><span>${esc(planSummary(plan))}</span>` +
+          `<span class="small">${plan.start ? `Starting from ${esc(plan.start.label === "Your location" ? "your location" : plan.start.label)}. ` : ""}Drive to the stops in number order: 1 first, then 2, and so on.</span></div>`;
+      } else if (inR.length) {
+        head = `<div class="plan-banner pending"><b>Not in driving order yet</b><span class="small">You changed your stops. <button type="button" class="link" id="goto-route">Find best route</button> to number them in the best order.</span></div>`;
+      }
+      box.innerHTML = (inR.length ? head + `<h2 class="city-head">${plan ? "Your route, in driving order" : "Your stops"}</h2>` + inR.map(partnerRow).join("") : "") +
         (rest.length ? `<h2 class="city-head">Not in route</h2>` + rest.map(partnerRow).join("") : "");
     } else {
       box.innerHTML = list.map(partnerRow).join("");
     }
+    const go = $("#goto-route"); if (go) go.onclick = () => showTab("route");
     renderBadges();
   }
 
@@ -214,14 +226,14 @@
     const list = filteredPartners();
     let added = 0;
     list.forEach(p => { if (!state.route.includes(p.id)) { state.route.push(p.id); added++; } });
-    routeResult = null; save(); renderPartners();
+    state.routePlan = null; save(); renderPartners();
     toast(added ? `Added ${added} stop${added === 1 ? "" : "s"} to your route.` : "They're all in your route already.");
   });
 
   function toggleRoute(id) {
     const i = state.route.indexOf(id);
     if (i >= 0) state.route.splice(i, 1); else state.route.push(id);
-    routeResult = null; save();
+    state.routePlan = null; save();
     return i < 0;
   }
 
@@ -390,7 +402,7 @@
     } else {
       state.partners.push(Object.assign({ id: "p-" + uid(), updated: stamp() }, data));
     }
-    routeResult = null; save(true); ed.close();
+    state.routePlan = null; save(true); ed.close();
     toast(editingPartner ? "Partner updated." : `Added ${data.name}.`);
     refreshAll();
   });
@@ -401,7 +413,7 @@
     if (!state.removed.includes(p.id)) state.removed.push(p.id);
     state.removedAt[p.id] = stamp();
     state.route = state.route.filter(id => id !== p.id);
-    routeResult = null; save(true); ed.close();
+    state.routePlan = null; save(true); ed.close();
     if (pd.open) pd.close();
     toast(`Removed ${p.name}.`);
     refreshAll();
@@ -475,7 +487,7 @@
       if (!confirm(`Replace everything on this device with the backup from ${fmtDate(data.saved.slice(0, 10))} (${n} visits)?`)) return;
       const keep = { syncKey: state.settings.syncKey, syncUrl: state.settings.syncUrl };
       localStorage.setItem(STORE_KEY, JSON.stringify(data.state));
-      state = loadState(); routeResult = null;
+      state = loadState(); state.routePlan = null;
       Object.assign(state.settings, keep);
       // Make restored records count as the newest, so they go to the sheet.
       const now = stamp();
@@ -625,16 +637,43 @@
   }
 
   // ---------- Route tab ----------
-  let routeResult = null; // { stops:[ids], start:{label,lat,lng,mapsValue}|null, legs:[{km,sec}], real, endMode, approx:[ids] }
+  // state.routePlan = the last best route: { stops:[ids], start:{label,lat,lng,mapsValue}|null, legs:[{km,sec}], real, endMode, approx:[ids] }.
+  // It only counts while the stops are exactly the ones (and order) it was worked out for.
+  function currentPlan() {
+    const r = state.routePlan;
+    if (!r || !Array.isArray(r.stops) || r.stops.length !== state.route.length) return null;
+    if (!r.stops.every((id, i) => id === state.route[i] && byId(id))) return null;
+    return r;
+  }
+  // For each stop: how far it is from the one before ("from your start", "from stop 2").
+  function stopLegs(r) {
+    const out = {}; let li = 0;
+    r.stops.forEach((id, i) => {
+      if (!r.start && i === 0) { out[id] = { first: true }; return; }
+      const leg = r.legs[li++];
+      out[id] = leg ? { km: leg.km, sec: leg.sec, from: i === 0 ? (r.start.label === "Your location" ? "your location" : "your start") : "stop " + i } : {};
+    });
+    return out;
+  }
+  function legText(l) {
+    if (!l) return "";
+    if (l.first) return "Start here";
+    if (l.km == null) return "";
+    return `${fmtMin(l.sec)} (${fmtMi(l.km)}) from ${l.from}`;
+  }
+  function planSummary(r) {
+    const totalKm = r.legs.reduce((s, l) => s + l.km, 0), totalSec = r.legs.reduce((s, l) => s + l.sec, 0);
+    return `${r.stops.length} stop${r.stops.length === 1 ? "" : "s"} · ${fmtMi(totalKm)} · about ${fmtMin(totalSec)} driving${r.real ? "" : " (estimate)"}`;
+  }
   const startModeEl = $("#start-mode"), endModeEl = $("#end-mode"), startAddrEl = $("#start-address");
   startModeEl.value = state.settings.startMode;
   endModeEl.value = state.settings.endMode;
   startAddrEl.value = state.settings.startAddress;
   function syncStartFields() { $("#start-address-wrap").hidden = startModeEl.value !== "address"; }
   syncStartFields();
-  startModeEl.addEventListener("change", () => { state.settings.startMode = startModeEl.value; routeResult = null; save(); syncStartFields(); renderRoute(); });
-  endModeEl.addEventListener("change", () => { state.settings.endMode = endModeEl.value; routeResult = null; save(); renderRoute(); });
-  startAddrEl.addEventListener("change", () => { state.settings.startAddress = startAddrEl.value.trim(); routeResult = null; save(); renderRoute(); });
+  startModeEl.addEventListener("change", () => { state.settings.startMode = startModeEl.value; state.routePlan = null; save(); syncStartFields(); renderRoute(); });
+  endModeEl.addEventListener("change", () => { state.settings.endMode = endModeEl.value; state.routePlan = null; save(); renderRoute(); });
+  startAddrEl.addEventListener("change", () => { state.settings.startAddress = startAddrEl.value.trim(); state.routePlan = null; save(); renderRoute(); });
 
   const fmtMi = km => (km * 0.621371).toFixed(km < 16 ? 1 : 0) + " mi";
   const fmtMin = sec => { const m = Math.round(sec / 60); return m < 60 ? `${m} min` : `${Math.floor(m / 60)} hr ${m % 60} min`; };
@@ -648,22 +687,20 @@
       box.innerHTML = `<p class="empty">No stops yet. Go to <b>Partners</b> and tap <b>+ Route</b> on the places you want to visit.</p>`;
       res.innerHTML = ""; $("#route-status").textContent = ""; renderBadges(); return;
     }
-    if (routeResult) {
+    const r = currentPlan();
+    if (r) {
       box.innerHTML = "";
-      const r = routeResult;
-      const totalKm = r.legs.reduce((s, l) => s + l.km, 0), totalSec = r.legs.reduce((s, l) => s + l.sec, 0);
-      let html = `<p class="route-summary">${r.stops.length} stop${r.stops.length === 1 ? "" : "s"} · ${fmtMi(totalKm)} · about ${fmtMin(totalSec)} driving${r.real ? "" : " (estimate)"}</p>`;
-      let li = 0;
+      const legs = stopLegs(r);
+      let html = `<div class="plan-banner"><b>✓ Best driving route found</b><span>${esc(planSummary(r))}</span><span class="small">Drive to the stops in number order: 1 first, then 2, and so on.</span></div>`;
       if (r.start) html += stopRow("S", r.start.label, "", null, true);
       r.stops.forEach((id, i) => {
         const p = byId(id);
-        const leg = (r.start || i > 0) ? r.legs[li++] : null;
-        const approx = r.approx.includes(id) ? " · location approximate" : "";
-        html += stopRow(i + 1, p.name, fullAddress(p), leg ? `${fmtMi(leg.km)} · ${fmtMin(leg.sec)}${approx}` : approx.slice(3), false, id);
+        const approx = (r.approx || []).includes(id) ? " · location approximate" : "";
+        html += stopRow(i + 1, p.name, fullAddress(p), legText(legs[id]) + approx, false, id);
       });
       if (r.endMode === "return" && r.start) {
-        const leg = r.legs[li];
-        html += stopRow("S", "Back to start", "", leg ? `${fmtMi(leg.km)} · ${fmtMin(leg.sec)}` : "", true);
+        const leg = r.legs[r.legs.length - 1];
+        html += stopRow("S", "Back to start", "", leg ? `${fmtMin(leg.sec)} (${fmtMi(leg.km)}) from stop ${r.stops.length}` : "", true);
       }
       const links = mapsLinks(r);
       html += `<div class="maps-links">${links.map((u, i) => `<a class="btn" href="${esc(u)}" target="_blank" rel="noopener">Open in Google Maps${links.length > 1 ? ` — part ${i + 1} of ${links.length}` : ""}</a>`).join("")}</div>`;
@@ -672,10 +709,11 @@
       res.innerHTML = html;
     } else {
       res.innerHTML = "";
-      box.innerHTML = state.route.map((id, i) => {
-        const p = byId(id);
-        return stopRow(i + 1, p.name, fullAddress(p), "", false, id);
-      }).join("");
+      box.innerHTML = `<p class="muted small">${state.route.length} stop${state.route.length === 1 ? "" : "s"}, not in driving order yet. Tap <b>Find best route</b> to number them in the best order.</p>` +
+        state.route.map(id => {
+          const p = byId(id);
+          return stopRow("•", p.name, fullAddress(p), "", false, id);
+        }).join("");
     }
     renderBadges();
   }
@@ -712,7 +750,7 @@
 
   $("#clear-route-btn").addEventListener("click", () => {
     if (!confirm("Remove all stops from your route?")) return;
-    state.route = []; routeResult = null; save(); renderRoute();
+    state.route = []; state.routePlan = null; save(); renderRoute();
   });
 
   $("#optimize-btn").addEventListener("click", async () => {
@@ -770,7 +808,7 @@
       state.route = stops;
       state.settings.sort = "route"; sortEl.value = "route"; // Partners tab follows the driving order too
       save();
-      routeResult = { stops, start, legs, real: tm.real, endMode, approx };
+      state.routePlan = { stops, start, legs, real: tm.real, endMode, approx }; save();
       status.textContent = "";
       renderRoute();
     } catch (e) {

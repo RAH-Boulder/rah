@@ -25,6 +25,12 @@
     (window.PARTNERS || []).forEach(p => {
       if (!have.has(p.id) && !s.removed.includes(p.id)) s.partners.push(Object.assign({}, p));
     });
+    s.partners.forEach(p => {
+      if (p.id === "longmont-pulmonary-multiple-clinics" && /professional lane/i.test(p.address)) {
+        p.address = p.address.replace(/professional lane/i, "Professional Pkwy");
+        p.updated = new Date().toISOString();
+      }
+    });
     return s;
   }
   let state = loadState();
@@ -524,6 +530,15 @@
     if (hit) { geoCache[key] = hit; saveGeo(); }
     return hit;
   }
+  // Map positions saved in partners.js. Used unless the address was changed to a different building.
+  const SEED = new Map((window.PARTNERS || []).map(p => [p.id, p]));
+  function savedPosition(p) {
+    const s = SEED.get(p.id);
+    if (!s || s.lat == null) return null;
+    const num = a => (String(a || "").match(/^\s*(\d+)/) || [])[1];
+    if (num(s.address) !== num(p.address) || s.city.toLowerCase() !== String(p.city || "").toLowerCase()) return null;
+    return { lat: s.lat, lng: s.lng, approx: !!s.approx };
+  }
   async function geocodePartner(p) {
     const key = fullAddress(p).toLowerCase();
     if (geoCache[key]) return geoCache[key];
@@ -666,7 +681,14 @@
     return `${r.stops.length} stop${r.stops.length === 1 ? "" : "s"} · ${fmtMi(totalKm)} · about ${fmtMin(totalSec)} driving${r.real ? "" : " (estimate)"}`;
   }
   const startModeEl = $("#start-mode"), endModeEl = $("#end-mode"), startAddrEl = $("#start-address");
+  const START_PLACES = (window.PARTNERS_CONFIG && window.PARTNERS_CONFIG.startPlaces) || [];
+  START_PLACES.slice().reverse().forEach(pl => {
+    const o = document.createElement("option");
+    o.value = "place:" + pl.id; o.textContent = pl.label;
+    startModeEl.options[0].after(o);
+  });
   startModeEl.value = state.settings.startMode;
+  if (!startModeEl.value) { startModeEl.value = "here"; state.settings.startMode = "here"; }
   endModeEl.value = state.settings.endMode;
   startAddrEl.value = state.settings.startAddress;
   function syncStartFields() { $("#start-address-wrap").hidden = startModeEl.value !== "address"; }
@@ -753,8 +775,14 @@
     state.route = []; state.routePlan = null; save(); renderRoute();
   });
 
+  function setStatus(text, warn) {
+    const el = $("#route-status");
+    el.textContent = text;
+    el.className = warn && text ? "route-alert" : "muted small";
+  }
   $("#optimize-btn").addEventListener("click", async () => {
-    const status = $("#route-status"), btn = $("#optimize-btn");
+    const status = { set textContent(t) { setStatus(t, false); } }, btn = $("#optimize-btn");
+    let note = "";
     const ids = state.route.slice();
     const mode = startModeEl.value, endMode = endModeEl.value;
     btn.disabled = true;
@@ -767,28 +795,33 @@
           const here = await getHere();
           start = { label: "Your location", lat: here.lat, lng: here.lng, mapsValue: `${here.lat.toFixed(6)},${here.lng.toFixed(6)}` };
         } catch (e) {
-          status.textContent = "Couldn't get your location. Allow location access, or choose \"An address…\" as the start.";
-          return;
+          // Still find the best order; just don't fix where it starts.
+          start = null;
+          note = "Couldn't get your phone's location, so the route starts at whichever stop is best (stop 1). " +
+            "To start somewhere specific, choose it under \"Start from\", or allow location access for this site in your phone's settings.";
         }
+      } else if (mode.startsWith("place:")) {
+        const pl = START_PLACES.find(x => "place:" + x.id === mode);
+        if (pl) start = { label: pl.label, lat: pl.lat, lng: pl.lng, mapsValue: pl.address };
       } else if (mode === "address") {
         const text = startAddrEl.value.trim();
-        if (!text) { status.textContent = "Type a start address first."; startAddrEl.focus(); return; }
+        if (!text) { setStatus("Type a start address first.", true); startAddrEl.focus(); return; }
         status.textContent = "Looking up your start address…";
         const hit = await geocodeText(text);
-        if (!hit) { status.textContent = "Couldn't find that start address. Try adding the city and zip code."; return; }
+        if (!hit) { setStatus("Couldn't find that start address. Try adding the city and zip code.", true); return; }
         start = { label: text, lat: hit.lat, lng: hit.lng, mapsValue: text };
       }
       // 2. Where are the stops?
       const pts = [], approx = [], missing = [];
       for (let i = 0; i < ids.length; i++) {
         const p = byId(ids[i]);
-        const cached = geoCache[fullAddress(p).toLowerCase()];
+        const cached = savedPosition(p) || geoCache[fullAddress(p).toLowerCase()];
         if (!cached) status.textContent = `Looking up addresses… ${i + 1} of ${ids.length} (first time only)`;
         let hit = null;
         try { hit = cached || await geocodePartner(p); } catch (e) { hit = null; }
         if (!hit) missing.push(p.name); else { pts.push(hit); if (hit.approx) approx.push(p.id); }
       }
-      if (missing.length) { status.textContent = `Couldn't find the address for: ${missing.join(", ")}. Check it under Edit partner details, or remove it from the route.`; return; }
+      if (missing.length) { setStatus(`Couldn't find the address for: ${missing.join(", ")}. Check it under Edit partner details, or remove it from the route, then try again.`, true); return; }
       // 3. Travel times and best order.
       status.textContent = "Working out the best order…";
       const nodes = start ? [start, ...pts] : [pts[0], ...pts]; // without a start, node 0 is a free "anywhere" start
@@ -809,10 +842,10 @@
       state.settings.sort = "route"; sortEl.value = "route"; // Partners tab follows the driving order too
       save();
       state.routePlan = { stops, start, legs, real: tm.real, endMode, approx }; save();
-      status.textContent = "";
       renderRoute();
+      setStatus(note, true);
     } catch (e) {
-      status.textContent = "Something went wrong working out the route. Check your internet connection and try again.";
+      setStatus("Something went wrong working out the route. Check your internet connection and try again.", true);
     } finally {
       btn.disabled = !state.route.length;
     }

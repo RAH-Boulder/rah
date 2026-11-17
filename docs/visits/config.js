@@ -10,5 +10,5 @@ window.VISITS_CONFIG = {
   intervalDays: 90,
 
   // "Due soon" lists visits that are overdue or due within this many days.
-  dueSoonDays: 14
+  dueSoonDays: 21
 };

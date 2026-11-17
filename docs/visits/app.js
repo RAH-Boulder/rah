@@ -129,7 +129,7 @@
     $("#overdue-count").textContent = overdue;
     $("#overdue-count").parentElement.classList.toggle("hot", overdue > 0);
     $("#soon-count").textContent = rows.length - overdue;
-    $("#soon-label").textContent = `Due in next ${CONFIG.dueSoonDays === 14 ? "2 weeks" : CONFIG.dueSoonDays + " days"}`;
+    $("#soon-label").textContent = `Due in next ${CONFIG.dueSoonDays % 7 ? CONFIG.dueSoonDays + " days" : plural(CONFIG.dueSoonDays / 7, "week")}`;
     $("#unsched-count").textContent = unsched;
     $("#unsched-count").parentElement.classList.toggle("hot", unsched > 0);
     $("#due-sub").textContent = `Overdue, or due in the next ${CONFIG.dueSoonDays} days (by ${fmtLong(by)}). Each visit is due ${CONFIG.intervalDays} days after the last one, on the closest weekday.`;

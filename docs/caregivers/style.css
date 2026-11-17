@@ -193,3 +193,9 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
 #missing-card summary h2::before { content: "▸ "; color: var(--muted); }
 #missing-card details[open] summary h2::before { content: "▾ "; }
 #missing-card details[open] #missing-sum { display: none; }
+.roster td.act-col { text-align: right; padding-top: 4px; padding-bottom: 4px; }
+.roster .act-col .btn { min-height: 32px; }
+.row-btns .link { padding: 0 4px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.btn.grey { color: var(--muted); border-color: var(--line); }
+.btn.grey:hover { color: var(--accent); border-color: var(--accent); }

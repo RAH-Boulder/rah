@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=2">
+  <link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
   <header class="top">
@@ -78,6 +78,7 @@
               <th><button type="button" data-sort="licenseExp">License expires</button></th>
               <th><button type="button" data-sort="trainingDue">Training due</button></th>
               <th><button type="button" data-sort="lastTraining">Last training</button></th>
+              <th class="act-col"><span class="sr-only">Active?</span></th>
             </tr>
           </thead>
           <tbody id="roster"></tbody>
@@ -144,6 +145,7 @@
       <label class="check"><input type="checkbox" name="inactive"> Inactive (no longer working — hidden from the lists)</label>
       <div class="dialog-foot">
         <button type="button" class="link danger" id="ed-delete" hidden>Delete caregiver</button>
+        <button type="button" class="btn small ghost" id="ed-inactive" hidden>Make inactive</button>
         <span class="spacer"></span>
         <button type="button" class="btn ghost" data-close>Cancel</button>
         <button type="submit" class="btn" value="save">Save</button>
@@ -189,6 +191,6 @@
   <div id="toast" role="status" aria-live="polite" hidden><span id="toast-msg"></span><button type="button" id="toast-undo" hidden>Undo</button></div>
 
   <script src="config.js?v=2"></script>
-  <script src="app.js?v=2"></script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>

@@ -13,6 +13,9 @@ midnight) it re-checks today's date and shows:
   records the date and sets the next due date.
 - **Missing dates**: active caregivers with no hire date, license or insurance date.
 - **All caregivers**: the full list, searchable and sortable. Click a row to edit.
+- **Make inactive** (on every row and in the edit box) takes someone off all the lists
+  right away; **Undo** puts them back. Tick **Show inactive** to see them, and **Make active**
+  to bring someone back.
 
 ## Annual training dates
 

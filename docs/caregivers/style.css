@@ -65,7 +65,7 @@ h3 { font-size: .95rem; margin: 1.25rem 0 .5rem; }
 main { padding-top: 16px; padding-bottom: 48px; }
 
 /* Form controls */
-input[type="text"], input[type="search"], input[type="date"], input[type="datetime-local"], select, textarea {
+input[type="text"], input[type="password"], input[type="search"], input[type="date"], input[type="datetime-local"], select, textarea {
   width: 100%; font: inherit; color: var(--ink); background: var(--card);
   border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; min-height: 44px;
 }
@@ -172,7 +172,7 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
 .all-clear { margin: 8px 0 0; padding: 10px 12px; border-radius: 10px; background: var(--good-bg); color: var(--good); font-weight: 600; }
 .all-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
 .all-head label { margin: 0; }
-.table-wrap { overflow-x: auto; margin: 8px -16px 0; padding: 0 16px; }
+.table-wrap { overflow-x: auto; margin: 8px -16px 0; padding: 0 16px; position: relative; }
 .roster { width: 100%; border-collapse: collapse; font-size: .9rem; }
 .roster th { text-align: left; white-space: nowrap; border-bottom: 2px solid var(--line); }
 .roster th button { background: none; border: 0; font: inherit; font-weight: 700; color: var(--muted); padding: 8px 6px; cursor: pointer; }

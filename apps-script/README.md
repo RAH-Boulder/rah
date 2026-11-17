@@ -150,3 +150,53 @@ same URL.
 - Anyone with both the passcode and the URL can read and change the list, so treat the
   passcode like a password. To change it, edit the `PASSCODE` property.
 - If two computers edit the same caregiver before syncing, the most recent edit wins.
+
+---
+
+# Supervisory visits sheet
+
+`VisitsSheet.gs` syncs the Supervisory Visits page (`docs/visits`) with a private Google
+Sheet, so every computer shows the same client list. It creates one tab, **Clients** (on the
+first sync):
+
+First name · Last name · Last visit · Next due · Scheduled visit · Notes · Inactive ·
+Deleted · Client ID · Updated
+
+## Set it up (once, about 5 minutes)
+
+1. Create a new Google Sheet, e.g. "Supervisory Visits". Keep it private: **Share →
+   General access → Restricted**, and add teammates by email.
+2. Click **Extensions → Apps Script**.
+3. Delete everything in the editor, paste in all of `VisitsSheet.gs`, and click save.
+4. Choose a passcode (at least 12 characters, not used elsewhere). Click the gear (**Project
+   Settings**), scroll to **Script properties**, **Add script property**: Property
+   `PASSCODE`, Value: your passcode. Save.
+5. **Deploy → New deployment** → gear next to "Select type" → **Web app**. **Execute as:
+   Me**, **Who has access: Anyone**. **Deploy**, then **Authorize access** and allow it. (If
+   Google says the app isn't verified: **Advanced → Go to … (unsafe)** — it's your script.)
+6. Copy the **Web app URL** (ends in `/exec`). Either put it in `docs/visits/config.js` as
+   `sheetUrl`, or paste it on the page under **Google Sheet**.
+7. Open the page, enter the URL and passcode under **Google Sheet**, click **Connect**.
+   Then **Import CSV** your starting list once; it's sent to the sheet automatically.
+   Other computers only need step 7.
+
+## Editing in the sheet
+
+You can edit cells or add rows directly. The script fills in **Updated** (and an ID for new
+rows) so your change shows on the page next time it opens. Typing a new **Last visit** also
+fills in **Next due** (90 days later, on the closest weekday). Dates are `2026-11-17`
+(`11/17/2026` typed by hand is understood too). To delete someone put `Yes` in **Deleted**
+(deleting the row outright would bring it back from computers that still have it).
+
+## If you change the script later
+
+**Deploy → Manage deployments → edit (pencil) → Version: New version → Deploy** keeps the
+same URL.
+
+## What it can and can't do
+
+Same as the caregiver compliance sheet above: nothing is read or written without the
+passcode, wrong tries are slowed down but you can't be locked out, a connected browser stays
+unlocked until **Forget this computer**, and **File → Version history** in the sheet can
+restore an earlier copy. If two computers edit the same client before syncing, the most
+recent edit wins.

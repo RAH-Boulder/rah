@@ -91,3 +91,55 @@ to keep the same URL.
   passcode like a password. To change it, edit the `PASSCODE` property; devices will
   ask for the new one.
 - If two devices edit the same visit before syncing, the most recent edit wins.
+
+---
+
+# Caregiver compliance sheet
+
+`CaregiversSheet.gs` syncs the Caregiver Compliance page (`docs/caregivers`) with a private
+Google Sheet, so every computer shows the same caregiver list. It creates one tab,
+**Caregivers** (on the first sync):
+
+First name · Last name · Hire date · License expires · Insurance expires · Training due ·
+Last training · Notes · Inactive · Deleted · Caregiver ID · Updated
+
+## Set it up (once, about 5 minutes)
+
+1. Create a new Google Sheet, e.g. "Caregiver Compliance". Keep it private: **Share →
+   General access → Restricted**, and add teammates by email.
+2. Click **Extensions → Apps Script**.
+3. Delete everything in the editor, paste in all of `CaregiversSheet.gs`, and click save.
+4. Choose a passcode (long, not used elsewhere). Click the gear (**Project Settings**),
+   scroll to **Script properties**, **Add script property**: Property `PASSCODE`, Value:
+   your passcode. Save.
+5. **Deploy → New deployment** → gear next to "Select type" → **Web app**. **Execute as:
+   Me**, **Who has access: Anyone**. **Deploy**, then **Authorize access** and allow it. (If
+   Google says the app isn't verified: **Advanced → Go to … (unsafe)** — it's your script.)
+6. Copy the **Web app URL** (ends in `/exec`). Either put it in
+   `docs/caregivers/config.js` as `sheetUrl`, or paste it on the page under **Google Sheet**.
+7. Open the page, enter the URL and passcode under **Google Sheet**, click **Connect**.
+   Then **Import CSV** your starting list once; it's sent to the sheet automatically.
+   Other computers only need step 7.
+
+## Editing in the sheet
+
+You can edit cells or add rows directly. The script fills in **Updated** (and an ID for new
+rows) so your change shows on the page next time it opens. Dates are `2026-11-17`
+(`11/17/2026` typed by hand is understood too). The sheet does **not** work out training
+due dates — fill in **Training due** yourself for rows added in the sheet, or add new
+caregivers on the page instead. To delete someone put `Yes` in **Deleted** (deleting the
+row outright would bring it back from computers that still have it).
+
+## If you change the script later
+
+**Deploy → Manage deployments → edit (pencil) → Version: New version → Deploy** keeps the
+same URL.
+
+## What it can and can't do
+
+- Without the passcode it does nothing and returns nothing. After 10 wrong tries it locks
+  for 15 minutes. The passcode is kept only in the script's properties and in the browsers
+  you connect — never in the website's code or in downloaded CSV files.
+- Anyone with both the passcode and the URL can read and change the list, so treat the
+  passcode like a password. To change it, edit the `PASSCODE` property.
+- If two computers edit the same caregiver before syncing, the most recent edit wins.

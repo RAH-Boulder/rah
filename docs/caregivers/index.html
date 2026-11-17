@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!-- Only run this site's own code, and only talk to the Google Sheet script. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://script.google.com https://script.googleusercontent.com; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'self'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Caregiver Compliance</title>
+  <meta name="theme-color" content="#b5303a">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-row">
+      <div>
+        <h1>Caregiver Compliance</h1>
+        <p class="small muted today" id="today"></p>
+      </div>
+      <div class="top-actions">
+        <button type="button" class="sync-pill" id="sync-pill" hidden></button>
+        <button type="button" class="btn small" id="add-btn">+ Add caregiver</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="tiles">
+      <a class="tile" href="#docs-card"><span class="tile-num" id="docs-count">0</span><span class="tile-label">License / insurance</span></a>
+      <a class="tile" href="#training-card"><span class="tile-num" id="training-count">0</span><span class="tile-label">Annual training</span></a>
+      <a class="tile" href="#missing-card"><span class="tile-num" id="missing-count">0</span><span class="tile-label">Missing dates</span></a>
+    </div>
+
+    <section class="card alert-card" id="docs-card">
+      <h2>Driver's license &amp; car insurance</h2>
+      <p class="small muted" id="docs-sub"></p>
+      <div id="docs-list"></div>
+    </section>
+
+    <section class="card alert-card" id="training-card">
+      <h2>Annual training due</h2>
+      <p class="small muted" id="training-sub"></p>
+      <div id="training-list"></div>
+    </section>
+
+    <section class="card" id="missing-card">
+      <details>
+        <summary><h2>Missing dates <span class="muted small" id="missing-sum"></span></h2></summary>
+        <p class="small muted">Active caregivers without a hire date, license or insurance date. They can't be tracked until it's entered.</p>
+        <div id="missing-list"></div>
+      </details>
+    </section>
+
+    <section class="card" id="all-card">
+      <div class="all-head">
+        <h2>All caregivers <span class="muted small" id="all-count"></span></h2>
+        <label class="check small"><input type="checkbox" id="show-inactive"> Show inactive</label>
+      </div>
+      <input type="search" id="search" placeholder="Search by name" autocomplete="off" aria-label="Search caregivers">
+      <div class="table-wrap">
+        <table class="roster">
+          <thead>
+            <tr>
+              <th><button type="button" data-sort="name">Name</button></th>
+              <th><button type="button" data-sort="hireDate">Hired</button></th>
+              <th><button type="button" data-sort="licenseExp">License expires</button></th>
+              <th><button type="button" data-sort="insuranceExp">Insurance expires</button></th>
+              <th><button type="button" data-sort="trainingDue">Training due</button></th>
+              <th><button type="button" data-sort="lastTraining">Last training</button></th>
+            </tr>
+          </thead>
+          <tbody id="roster"></tbody>
+        </table>
+      </div>
+      <p class="empty" id="roster-empty" hidden>No caregivers yet. Click <b>+ Add caregiver</b>, or import a spreadsheet below.</p>
+    </section>
+
+    <section class="card data-card" id="sync-card">
+      <h2>Google Sheet</h2>
+      <p class="small" id="sync-status"></p>
+      <form id="sync-form" autocomplete="off">
+        <p class="small muted">Connect once on each computer or phone. The caregiver list then stays the same on all of them and in the sheet.</p>
+        <label id="sync-url-wrap">Web app URL
+          <input type="text" id="sync-url" placeholder="https://script.google.com/macros/s/…/exec" inputmode="url">
+        </label>
+        <label>Passcode
+          <input type="password" id="sync-key" required autocomplete="current-password">
+        </label>
+        <button type="submit" class="btn small">Connect</button>
+      </form>
+      <div id="sync-connected" class="btn-row">
+        <button type="button" class="btn small" id="sync-now-btn">Sync now</button>
+        <button type="button" class="link danger" id="sync-off-btn">Disconnect this device</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Spreadsheet file</h2>
+      <p class="small">Download the whole list as a CSV file (opens in Excel or Google Sheets), or import one.
+        Importing matches caregivers by name and updates their dates; anyone new is added.</p>
+      <p class="small muted">Columns: First name, Last name, Hire date, License expires, Insurance expires, Training due, Last training, Notes. Dates like 11/17/2026 or 2026-11-17. A blank Training due is worked out from the hire date.</p>
+      <div class="btn-row">
+        <button type="button" class="btn small" id="export-btn">Download CSV</button>
+        <label class="btn small ghost file-btn">Import CSV
+          <input type="file" id="import-input" accept=".csv,text/csv">
+        </label>
+      </div>
+    </section>
+  </main>
+
+  <!-- Add / edit a caregiver -->
+  <dialog id="edit-dialog" aria-labelledby="ed-title">
+    <form class="dialog-inner" id="edit-form" method="dialog">
+      <div class="dialog-head">
+        <h2 id="ed-title">Add caregiver</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Close">✕</button>
+      </div>
+      <div class="field-grid">
+        <label>First name <input type="text" name="first" required autocomplete="off"></label>
+        <label>Last name <input type="text" name="last" required autocomplete="off"></label>
+      </div>
+      <label>Hire date <input type="date" name="hireDate"></label>
+      <div class="field-grid">
+        <label>Driver's license expires <input type="date" name="licenseExp"></label>
+        <label>Car insurance expires <input type="date" name="insuranceExp"></label>
+      </div>
+      <div class="field-grid">
+        <label>Annual training due <input type="date" name="trainingDue"></label>
+        <label>Last training completed <input type="date" name="lastTraining"></label>
+      </div>
+      <p class="small muted hint" id="ed-due-hint"></p>
+      <label>Notes <textarea name="notes" rows="2"></textarea></label>
+      <label class="check"><input type="checkbox" name="inactive"> Inactive (no longer working — hidden from the lists)</label>
+      <div class="dialog-foot">
+        <button type="button" class="link danger" id="ed-delete" hidden>Delete caregiver</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn ghost" data-close>Cancel</button>
+        <button type="submit" class="btn" value="save">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Mark annual training completed -->
+  <dialog id="done-dialog" aria-labelledby="dd-title">
+    <form class="dialog-inner" id="done-form" method="dialog">
+      <div class="dialog-head">
+        <h2 id="dd-title">Training completed</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Close">✕</button>
+      </div>
+      <p id="dd-info"></p>
+      <label>Date completed <input type="date" name="completed" required></label>
+      <p class="next-due" id="dd-next"></p>
+      <div class="dialog-foot">
+        <span class="spacer"></span>
+        <button type="button" class="btn ghost" data-close>Cancel</button>
+        <button type="submit" class="btn" value="save">Mark completed</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" role="status" aria-live="polite" hidden><span id="toast-msg"></span><button type="button" id="toast-undo" hidden>Undo</button></div>
+
+  <script src="config.js?v=1"></script>
+  <script src="app.js?v=1"></script>
+</body>
+</html>

@@ -150,6 +150,7 @@
           <div class="row-btns">
             <button type="button" class="btn small" data-renew="${esc(r.c.id)}" data-item="${k}">Enter new expiration date</button>
             <button type="button" class="btn small ghost" data-copy="${esc(r.c.id)}" data-item="${k}">Copy message</button>
+            <button type="button" class="btn small ghost grey" data-inactive="${esc(r.c.id)}">Make inactive</button>
           </div>
         </div>`;
       }).join("") : `<p class="all-clear">✓ No ${it.word} expired or expiring in the next ${CONFIG.expiringDays} days.</p>`;
@@ -172,6 +173,7 @@
         </div>
         <div class="row-btns">
           <button type="button" class="btn small" data-done="${esc(r.c.id)}">Mark completed</button>
+          <button type="button" class="btn small ghost grey" data-inactive="${esc(r.c.id)}">Make inactive</button>
         </div>
       </div>`;
     }).join("") : `<p class="all-clear">✓ Nobody is due for annual training in the next ${CONFIG.trainingDays} days.</p>`;
@@ -214,6 +216,9 @@
     $("#roster").innerHTML = list.map(c => `<tr data-edit="${esc(c.id)}" class="${c.inactive ? "inactive" : ""}" tabindex="0">
       <td class="name">${esc(fullName(c))}${c.inactive ? ' <span class="tag">inactive</span>' : ""}</td>
       ${cellDate(c.hireDate)}${cellDate(c.insuranceExp, CONFIG.expiringDays)}${cellDate(c.licenseExp, CONFIG.expiringDays)}${cellDate(c.trainingDue, CONFIG.trainingDays)}${cellDate(c.lastTraining)}
+      <td class="act-col">${c.inactive
+        ? `<button type="button" class="btn small ghost" data-active="${esc(c.id)}">Make active</button>`
+        : `<button type="button" class="btn small ghost grey" data-inactive="${esc(c.id)}">Make inactive</button>`}</td>
     </tr>`).join("");
     $("#roster-empty").hidden = state.caregivers.length > 0;
   }
@@ -227,7 +232,7 @@
 
   // ---------- Clicks ----------
   document.addEventListener("click", e => {
-    const t = e.target.closest("[data-edit],[data-done],[data-renew],[data-copy],[data-sort],[data-close]");
+    const t = e.target.closest("[data-edit],[data-done],[data-renew],[data-copy],[data-inactive],[data-active],[data-sort],[data-close]");
     if (!t) return;
     if (t.dataset.close !== undefined) { t.closest("dialog").close(); return; }
     if (t.dataset.sort) {
@@ -235,13 +240,15 @@
       save(); renderRoster(); return;
     }
     if (t.dataset.done) { openDone(t.dataset.done); return; }
+    if (t.dataset.inactive) { setInactive(t.dataset.inactive, true); return; }
+    if (t.dataset.active) { setInactive(t.dataset.active, false); return; }
     if (t.dataset.renew) { openRenew(t.dataset.renew, t.dataset.item); return; }
     if (t.dataset.copy) { copyMessage(t.dataset.copy, t.dataset.item); return; }
     if (t.dataset.edit) openEdit(t.dataset.edit, t.dataset.focus);
   });
   $("#roster").addEventListener("keydown", e => {
     const tr = e.target.closest("tr[data-edit]");
-    if (tr && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); openEdit(tr.dataset.edit); }
+    if (tr && e.target === tr && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); openEdit(tr.dataset.edit); }
   });
   $("#search").addEventListener("input", renderRoster);
   $("#show-inactive").checked = !!state.settings.showInactive;
@@ -268,6 +275,7 @@
     edForm.reset();
     $("#ed-title").textContent = c ? fullName(c) : "Add caregiver";
     $("#ed-delete").hidden = !c;
+    $("#ed-inactive").hidden = !c || !!c.inactive;
     FIELDS.forEach(f => { edForm.elements[f].value = c ? (c[f] || "") : ""; });
     edForm.elements.inactive.checked = !!(c && c.inactive);
     hireAtOpen = c ? c.hireDate || "" : "";
@@ -329,6 +337,18 @@
       save(true); renderAll();
     });
   });
+
+  // ---------- Active / inactive ----------
+  function setInactive(id, inactive) {
+    const c = byId(id);
+    if (!c || !!c.inactive === inactive) return;
+    c.inactive = inactive; c.updated = stamp();
+    save(true); renderAll();
+    toast(inactive ? `${fullName(c)} is now inactive and off the lists.` : `${fullName(c)} is active again.`, () => {
+      c.inactive = !inactive; c.updated = stamp(); save(true); renderAll();
+    });
+  }
+  $("#ed-inactive").addEventListener("click", () => { const id = editingId; ed.close(); setInactive(id, true); });
 
   // ---------- New license / insurance date ----------
   const rd = $("#renew-dialog"), rdForm = $("#renew-form");

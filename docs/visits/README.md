@@ -4,8 +4,8 @@ One page that tracks when each client's **90-day supervisory visit** is due. No 
 build step. Every time the page is opened (or you come back to the tab, or the date rolls
 over at midnight) it re-checks today's date.
 
-- **Visits due**: anyone overdue, due in the next 14 days, or with a visit scheduled in the
-  next 14 days. Each row shows the due date, the last visit, and whether a visit is
+- **Visits due**: anyone overdue, due in the next 3 weeks (21 days), or with a visit scheduled in the
+  next 3 weeks. Each row shows the due date, the last visit, and whether a visit is
   scheduled. **Copy list** copies the list as text for an email or message; **Print** prints it.
 - **Enter scheduled date** records when the visit is booked (you can change or clear it).
   The page warns if the date is after the due date or on a weekend.
@@ -59,7 +59,7 @@ the last visit. A last visit date in the future with no Next due is treated as a
 ## Settings (`config.js`)
 
 - `intervalDays` — days between visits (90).
-- `dueSoonDays` — how far ahead the "Visits due" list looks (14).
+- `dueSoonDays` — how far ahead the "Visits due" list looks (21 days = 3 weeks).
 - `sheetUrl` — the Google Sheet web app URL.
 
 After changing a file, bump the `?v=` numbers in `index.html` so browsers pick up the

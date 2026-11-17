@@ -19,26 +19,28 @@ const INTERVAL_DAYS = 90;
 const CLIENTS = {
   name: "Clients",
   id: "Client ID",
-  headers: ["First name", "Last name", "Last visit", "Next due", "Scheduled visit", "Notes", "Inactive",
-    "Deleted", "Client ID", "Updated"],
+  headers: ["First name", "Last name", "Last visit", "Next due", "Scheduled visit", "Notes", "On hold",
+    "Hold reason", "Hold since", "Inactive", "Deleted", "Client ID", "Updated"],
   toCells: function (r) {
     if (r.removed) return { "Client ID": r.id, "Deleted": "Yes", "Updated": r.updated };
     return {
       "First name": r.first, "Last name": r.last, "Last visit": r.lastVisit, "Next due": r.nextDue,
-      "Scheduled visit": r.scheduled, "Notes": r.notes, "Inactive": r.inactive ? "Yes" : "", "Deleted": "",
+      "Scheduled visit": r.scheduled, "Notes": r.notes, "On hold": r.onHold ? "Yes" : "", "Hold reason": r.holdReason,
+      "Hold since": r.holdSince, "Inactive": r.inactive ? "Yes" : "", "Deleted": "",
       "Client ID": r.id, "Updated": r.updated
     };
   },
   fromCells: function (c) {
     return {
       id: c["Client ID"], first: c["First name"], last: c["Last name"], lastVisit: c["Last visit"],
-      nextDue: c["Next due"], scheduled: c["Scheduled visit"], notes: c["Notes"], inactive: yes(c["Inactive"]),
+      nextDue: c["Next due"], scheduled: c["Scheduled visit"], notes: c["Notes"], onHold: yes(c["On hold"]),
+      holdReason: c["Hold reason"], holdSince: c["Hold since"], inactive: yes(c["Inactive"]),
       removed: yes(c["Deleted"]), updated: c["Updated"]
     };
   }
 };
 
-const DATE_HEADERS = ["Last visit", "Next due", "Scheduled visit"];
+const DATE_HEADERS = ["Last visit", "Next due", "Scheduled visit", "Hold since"];
 
 function doPost(e) {
   let data;

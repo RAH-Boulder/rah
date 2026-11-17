@@ -11,7 +11,12 @@ over at midnight) it re-checks today's date.
   The page warns if the date is after the due date or on a weekend.
 - **Mark completed** records the date the visit took place, works out the next due date,
   and clears the scheduled date. Every action can be undone from the message that appears.
+- **Put on hold** (on the due list, or tick **On hold** when editing a client) for someone
+  who stays a client but shouldn't be visited for now, e.g. temporary nursing home care.
+  They drop off the due list and counts and appear under **On hold** with the reason.
+  **Take off hold** puts them back; if their visit is past due they show as overdue.
 - **All clients**: the full list, searchable and sortable. Click a row to edit.
+  **Remove** takes a client off the list completely (you're asked to confirm, and can undo).
 
 ## Due dates
 
@@ -28,8 +33,8 @@ Click **+ Add client** and enter the name and the **first visit date**:
 - If it's in the future, it's listed as a scheduled first visit. Click **Mark completed**
   after it happens to start the 90-day count.
 
-Tick **Inactive** (open the client) for someone who is no longer a client: their record
-stays but they drop off the lists. **Delete** removes them completely.
+Tick **Inactive** (open the client) to keep a former client's record but hide them.
+**Remove** deletes them from the list completely.
 
 ## Where the data is kept
 

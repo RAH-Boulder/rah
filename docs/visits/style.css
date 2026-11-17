@@ -220,3 +220,9 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
   .card { box-shadow: none; border: 0; }
 }
 .btn-row.tight { margin-top: 0; }
+.tag.hold { background: var(--warn-bg); color: var(--warn); }
+#hold-card summary { cursor: pointer; list-style: none; }
+#hold-card summary::-webkit-details-marker { display: none; }
+#hold-card summary h2::before { content: "▸ "; color: var(--muted); }
+#hold-card details[open] summary h2::before { content: "▾ "; }
+#hold-card h2 { margin-bottom: 0; }

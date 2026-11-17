@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!-- Only run this site's own code, and only talk to the Google Sheet script. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self' https://script.google.com https://script.googleusercontent.com; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'self'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Supervisory Visits</title>
+  <meta name="theme-color" content="#b5303a">
+  <link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-row">
+      <div>
+        <h1>Supervisory Visits</h1>
+        <p class="small muted today" id="today"></p>
+      </div>
+      <div class="top-actions">
+        <button type="button" class="sync-pill" id="sync-pill" hidden></button>
+        <button type="button" class="btn small" id="add-btn">+ Add client</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="tiles">
+      <a class="tile" href="#due-card"><span class="tile-num" id="overdue-count">0</span><span class="tile-label">Overdue</span></a>
+      <a class="tile" href="#due-card"><span class="tile-num" id="soon-count">0</span><span class="tile-label" id="soon-label">Due in next 2 weeks</span></a>
+      <a class="tile" href="#due-card"><span class="tile-num" id="unsched-count">0</span><span class="tile-label">Not scheduled yet</span></a>
+      <a class="tile" href="#missing-card"><span class="tile-num" id="missing-count">0</span><span class="tile-label">Missing dates</span></a>
+    </div>
+
+    <section class="card alert-card" id="due-card">
+      <div class="card-head">
+        <div>
+          <h2>Visits due</h2>
+          <p class="small muted" id="due-sub"></p>
+        </div>
+        <div class="btn-row tight">
+          <button type="button" class="btn small ghost" id="copy-list-btn">Copy list</button>
+          <button type="button" class="btn small ghost" id="print-btn">Print</button>
+        </div>
+      </div>
+      <div id="due-list"></div>
+    </section>
+
+    <section class="card" id="missing-card">
+      <details>
+        <summary><h2>Missing dates <span class="muted small" id="missing-sum"></span></h2></summary>
+        <p class="small muted">Active clients with no last visit and no due date. They can't be tracked until a visit date is entered.</p>
+        <div id="missing-list"></div>
+      </details>
+    </section>
+
+    <section class="card" id="all-card">
+      <div class="all-head">
+        <h2>All clients <span class="muted small" id="all-count"></span></h2>
+        <label class="check small"><input type="checkbox" id="show-inactive"> Show inactive</label>
+      </div>
+      <input type="search" id="search" placeholder="Search by name" autocomplete="off" aria-label="Search clients">
+      <div class="table-wrap">
+        <table class="roster">
+          <thead>
+            <tr>
+              <th><button type="button" data-sort="name">Name</button></th>
+              <th><button type="button" data-sort="lastVisit">Last visit</button></th>
+              <th><button type="button" data-sort="nextDue">Next due</button></th>
+              <th><button type="button" data-sort="scheduled">Scheduled</button></th>
+              <th class="act-col"><span class="sr-only">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody id="roster"></tbody>
+        </table>
+      </div>
+      <p class="empty" id="roster-empty" hidden>No clients yet. Click <b>+ Add client</b>, or import a spreadsheet below.</p>
+    </section>
+
+    <section class="card data-card" id="sync-card">
+      <h2>Google Sheet</h2>
+      <p class="small" id="sync-status"></p>
+      <form id="sync-form" autocomplete="off">
+        <p class="small muted">Connect once on each computer or phone. The client list then stays the same on all of them and in the sheet.</p>
+        <label id="sync-url-wrap">Web app URL
+          <input type="text" id="sync-url" placeholder="https://script.google.com/macros/s/…/exec" inputmode="url">
+        </label>
+        <label>Passcode
+          <input type="password" id="sync-key" required autocomplete="current-password">
+        </label>
+        <button type="submit" class="btn small">Connect</button>
+      </form>
+      <div id="sync-connected" class="btn-row">
+        <button type="button" class="btn small" id="sync-now-btn">Sync now</button>
+        <button type="button" class="link danger" id="sync-off-btn">Disconnect this device</button>
+      </div>
+      <p class="small warn-note" id="weak-note" hidden>Your passcode is short, so it could eventually be guessed. Change it to at least 12 characters (for example four unrelated words) under Apps Script → Project Settings → Script properties, then connect again.</p>
+      <div class="forget">
+        <h3>Using a shared computer?</h3>
+        <p class="small muted">Once connected, anyone who opens this page on this computer can see and change the list. <b>Forget this computer</b> erases the list and the passcode from this browser. Nothing is removed from the Google Sheet.</p>
+        <button type="button" class="btn small ghost" id="forget-btn">Forget this computer</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Spreadsheet file</h2>
+      <p class="small">Download the whole list as a CSV file (opens in Excel or Google Sheets), or import one.
+        Importing matches clients by name and updates their dates; anyone new is added.</p>
+      <p class="small muted">Columns: First name, Last name, Last visit, Next due, Scheduled visit, Notes. Dates like 11/17/2026 or 2026-11-17. A blank Next due is worked out from the last visit.</p>
+      <div class="btn-row">
+        <button type="button" class="btn small" id="export-btn">Download CSV</button>
+        <label class="btn small ghost file-btn">Import CSV
+          <input type="file" id="import-input" accept=".csv,text/csv">
+        </label>
+      </div>
+    </section>
+  </main>
+
+  <!-- Add / edit a client -->
+  <dialog id="edit-dialog" aria-labelledby="ed-title">
+    <form class="dialog-inner" id="edit-form" method="dialog">
+      <div class="dialog-head">
+        <h2 id="ed-title">Add client</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Close">✕</button>
+      </div>
+      <div class="field-grid">
+        <label>First name <input type="text" name="first" required autocomplete="off"></label>
+        <label>Last name <input type="text" name="last" required autocomplete="off"></label>
+      </div>
+      <label><span id="ed-visit-label">First visit date</span> <input type="date" name="lastVisit"></label>
+      <p class="small muted hint" id="ed-hint"></p>
+      <div class="field-grid" id="ed-more-fields">
+        <label>Next visit due <input type="date" name="nextDue"></label>
+        <label>Scheduled visit <input type="date" name="scheduled"></label>
+      </div>
+      <label>Notes <textarea name="notes" rows="2"></textarea></label>
+      <label class="check" id="ed-inactive-wrap"><input type="checkbox" name="inactive"> Inactive (no longer a client — hidden from the lists)</label>
+      <div class="dialog-foot">
+        <button type="button" class="link danger" id="ed-delete" hidden>Delete client</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn ghost" data-close>Cancel</button>
+        <button type="submit" class="btn" value="save">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Enter / change the scheduled visit date -->
+  <dialog id="sched-dialog" aria-labelledby="sd-title">
+    <form class="dialog-inner" id="sched-form" method="dialog">
+      <div class="dialog-head">
+        <h2 id="sd-title">Schedule visit</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Close">✕</button>
+      </div>
+      <p id="sd-info"></p>
+      <label>Scheduled visit date <input type="date" name="date" required></label>
+      <p class="small hint" id="sd-hint"></p>
+      <div class="dialog-foot">
+        <button type="button" class="link danger" id="sd-clear" hidden>Clear scheduled date</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn ghost" data-close>Cancel</button>
+        <button type="submit" class="btn" value="save">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Mark a visit completed -->
+  <dialog id="done-dialog" aria-labelledby="dd-title">
+    <form class="dialog-inner" id="done-form" method="dialog">
+      <div class="dialog-head">
+        <h2 id="dd-title">Visit completed</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Close">✕</button>
+      </div>
+      <p id="dd-info"></p>
+      <label>Date of the visit <input type="date" name="completed" required></label>
+      <p class="next-due" id="dd-next"></p>
+      <div class="dialog-foot">
+        <span class="spacer"></span>
+        <button type="button" class="btn ghost" data-close>Cancel</button>
+        <button type="submit" class="btn" value="save">Mark completed</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" role="status" aria-live="polite" hidden><span id="toast-msg"></span><button type="button" id="toast-undo" hidden>Undo</button></div>
+
+  <script src="config.js?v=1"></script>
+  <script src="app.js?v=1"></script>
+</body>
+</html>

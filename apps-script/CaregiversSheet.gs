@@ -9,8 +9,9 @@
  * Setup: see apps-script/README.md ("Caregiver compliance sheet").
  *
  * Safety: nothing is read or written unless the request carries the passcode stored in
- * this script's properties (Project Settings > Script properties > PASSCODE). After 10
- * wrong passcodes it refuses everything for 15 minutes.
+ * this script's properties (Project Settings > Script properties > PASSCODE). Wrong
+ * passcodes are slowed down, but the right one always works, so nobody can lock you out.
+ * Use at least 12 characters; the page shows a warning if the passcode is shorter.
  */
 
 const CAREGIVERS = {
@@ -44,11 +45,13 @@ function doPost(e) {
 
   const passcode = PropertiesService.getScriptProperties().getProperty("PASSCODE");
   if (!passcode) return reply({ ok: false, error: "not set up" });
-  const cache = CacheService.getScriptCache();
-  const fails = Number(cache.get("bad-tries") || 0);
-  if (fails >= 10) return reply({ ok: false, error: "locked" });
-  if (String(data.key || "") !== passcode) {
-    cache.put("bad-tries", String(fails + 1), 900);
+  if (!sameText(String(data.key || ""), passcode)) {
+    // Slow down guessing without ever locking out the right passcode: each wrong try waits
+    // 2 seconds, and 5 seconds once there have been more than 20 wrong tries in 15 minutes.
+    const cache = CacheService.getScriptCache();
+    const fails = Number(cache.get("bad-tries") || 0) + 1;
+    cache.put("bad-tries", String(fails), 900);
+    Utilities.sleep(fails > 20 ? 5000 : 2000);
     return reply({ ok: false, error: "passcode" });
   }
 
@@ -57,7 +60,7 @@ function doPost(e) {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const caregivers = merge(ss, CAREGIVERS, Array.isArray(data.caregivers) ? data.caregivers : []);
-    return reply({ ok: true, now: new Date().toISOString(), caregivers: caregivers });
+    return reply({ ok: true, now: new Date().toISOString(), weak: passcode.length < 12, caregivers: caregivers });
   } catch (err) {
     return reply({ ok: false, error: String(err && err.message || err).slice(0, 200) });
   } finally {
@@ -144,6 +147,13 @@ function onEdit(e) {
 }
 
 // ---------- helpers ----------
+// Compares every character, so the time taken doesn't hint at how much of a guess was right.
+function sameText(a, b) {
+  let diff = a.length ^ b.length;
+  for (let i = 0; i < Math.max(a.length, b.length); i++) diff |= (a.charCodeAt(i) || 0) ^ (b.charCodeAt(i) || 0);
+  return diff === 0;
+}
+
 function tab(ss, spec) {
   let sheet = ss.getSheetByName(spec.name);
   if (!sheet) {

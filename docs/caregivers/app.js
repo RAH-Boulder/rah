@@ -559,6 +559,7 @@
         syncError = j.error || "error";
         setSyncPill("bad"); return;
       }
+      $("#weak-note").hidden = !j.weak;
       applyServer(j);
       state.settings.lastSync = stamp(); syncError = "";
       save();
@@ -590,7 +591,7 @@
     let msg;
     if (!on) msg = syncError === "passcode" ? "Wrong passcode — try again." : "Not connected. The caregiver list is only saved in this browser.";
     else if (syncError === "network" || syncError === "offline") msg = "Couldn't reach the sheet. Changes are saved here and will sync when you're back online.";
-    else if (syncError === "locked") msg = "Too many wrong passcodes were tried. Wait 15 minutes and click Sync now.";
+    else if (syncError === "locked") msg = "The sheet's script is an old version. Update it (see the setup steps) and click Sync now.";
     else if (syncError === "not set up") msg = "The sheet's script has no PASSCODE set yet. See the setup steps.";
     else if (syncError) msg = "The sheet reported a problem: " + syncError;
     else msg = state.settings.lastSync ? `Connected. Last synced ${new Date(state.settings.lastSync).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}.` : "Connected.";
@@ -612,8 +613,17 @@
   });
   $("#sync-now-btn").addEventListener("click", () => syncNow(true));
   $("#sync-off-btn").addEventListener("click", () => {
-    if (!confirm("Stop syncing this computer? The list stays here and in the sheet.")) return;
+    if (!confirm("Stop syncing this computer? The list stays saved in this browser and in the sheet. (To erase it from this browser, use Forget this computer.)")) return;
     delete state.settings.syncKey; save(); setSyncPill(); renderSyncCard();
+  });
+  $("#forget-btn").addEventListener("click", () => {
+    const msg = syncOn()
+      ? "Erase the caregiver list and the passcode from this browser? The Google Sheet keeps everything, and you can connect again with the passcode."
+      : "This computer isn't connected to the Google Sheet, so this list is only saved here. Erase it anyway? (Download CSV first if you want a copy.)";
+    if (!confirm(msg)) return;
+    clearTimeout(syncTimer);
+    try { localStorage.removeItem(STORE_KEY); } catch (e) { /* ignore */ }
+    location.reload();
   });
   $("#sync-pill").addEventListener("click", () => $("#sync-card").scrollIntoView({ behavior: "smooth" }));
   $("#sync-url").value = state.settings.syncUrl || "";

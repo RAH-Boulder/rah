@@ -4,15 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <!-- Only run this site's own code, and only talk to the Google Sheet script. -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://script.google.com https://script.googleusercontent.com; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self' https://script.google.com https://script.googleusercontent.com; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'self'">
   <meta name="referrer" content="no-referrer">
   <meta name="robots" content="noindex, nofollow">
   <title>Caregiver Compliance</title>
   <meta name="theme-color" content="#b5303a">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=3">
+  <link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
   <header class="top">
@@ -104,6 +101,12 @@
         <button type="button" class="btn small" id="sync-now-btn">Sync now</button>
         <button type="button" class="link danger" id="sync-off-btn">Disconnect this device</button>
       </div>
+      <p class="small warn-note" id="weak-note" hidden>Your passcode is short, so it could eventually be guessed. Change it to at least 12 characters (for example four unrelated words) under Apps Script → Project Settings → Script properties, then connect again.</p>
+      <div class="forget">
+        <h3>Using a shared computer?</h3>
+        <p class="small muted">Once connected, anyone who opens this page on this computer can see and change the list. <b>Forget this computer</b> erases the list and the passcode from this browser. Nothing is removed from the Google Sheet.</p>
+        <button type="button" class="btn small ghost" id="forget-btn">Forget this computer</button>
+      </div>
     </section>
 
     <section class="card">
@@ -191,6 +194,6 @@
   <div id="toast" role="status" aria-live="polite" hidden><span id="toast-msg"></span><button type="button" id="toast-undo" hidden>Undo</button></div>
 
   <script src="config.js?v=2"></script>
-  <script src="app.js?v=4"></script>
+  <script src="app.js?v=5"></script>
 </body>
 </html>

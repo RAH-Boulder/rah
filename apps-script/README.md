@@ -109,7 +109,7 @@ Last training · Notes · Inactive · Deleted · Caregiver ID · Updated
    General access → Restricted**, and add teammates by email.
 2. Click **Extensions → Apps Script**.
 3. Delete everything in the editor, paste in all of `CaregiversSheet.gs`, and click save.
-4. Choose a passcode (long, not used elsewhere). Click the gear (**Project Settings**),
+4. Choose a passcode (at least 12 characters, not used elsewhere). Click the gear (**Project Settings**),
    scroll to **Script properties**, **Add script property**: Property `PASSCODE`, Value:
    your passcode. Save.
 5. **Deploy → New deployment** → gear next to "Select type" → **Web app**. **Execute as:
@@ -137,9 +137,16 @@ same URL.
 
 ## What it can and can't do
 
-- Without the passcode it does nothing and returns nothing. After 10 wrong tries it locks
-  for 15 minutes. The passcode is kept only in the script's properties and in the browsers
-  you connect — never in the website's code or in downloaded CSV files.
+- Without the passcode it does nothing and returns nothing. Each wrong try is slowed down
+  (2 seconds, or 5 once there have been many), but the right passcode always works, so
+  nobody can lock you out by guessing. The passcode is kept only in the script's properties
+  and in the browsers you connect — never in the website's code or in downloaded CSV files.
+- Use a passcode of at least 12 characters, e.g. four unrelated words. The page shows a
+  warning if it's shorter.
+- A connected browser stays unlocked: anyone who opens the page on that computer can see
+  and change the list. On a shared computer, use **Forget this computer** when you're done.
+- If something is changed or deleted by mistake, **File → Version history** in the sheet
+  can restore an earlier copy.
 - Anyone with both the passcode and the URL can read and change the list, so treat the
   passcode like a password. To change it, edit the `PASSCODE` property.
 - If two computers edit the same caregiver before syncing, the most recent edit wins.

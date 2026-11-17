@@ -549,11 +549,11 @@
         if (d === null) { bad.push(v[k]); delete v[k]; } else v[k] = d;
       });
       if (bad.length) skipped.push(`row ${hi + n + 2} (${bad.join(", ")})`);
-      // A visit date in the future hasn't happened yet: treat it as a scheduled first visit,
-      // the same as + Add client does.
-      if (isDate(v.lastVisit) && v.lastVisit > today()) {
+      // A visit date in the future with no Next due hasn't happened yet: treat it as a scheduled
+      // first visit, the same as + Add client does. (With a Next due, both are kept as given.)
+      if (isDate(v.lastVisit) && v.lastVisit > today() && !isDate(v.nextDue)) {
         if (!isDate(v.scheduled)) v.scheduled = v.lastVisit;
-        if (!isDate(v.nextDue) || v.nextDue === addDays(v.lastVisit, CONFIG.intervalDays)) v.nextDue = v.lastVisit;
+        v.nextDue = v.lastVisit;
         v.lastVisit = "";
       }
       // A blank due date, or one that is exactly 90 days after the last visit without the

@@ -54,7 +54,7 @@ the passcode from that browser; the sheet keeps everything.
 matched by name and their dates updated; new names are added. Columns: First name, Last
 name, Last visit, Next due, Scheduled visit, Notes (the old spreadsheet's "Last Supervisory
 Visit" and "Due Date for Next Visit" headings work too). A blank Next due is worked out from
-the last visit. A last visit date in the future is treated as a scheduled first visit.
+the last visit. A last visit date in the future with no Next due is treated as a scheduled first visit.
 
 ## Settings (`config.js`)
 

@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=1">
+  <link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
   <header class="top">
@@ -30,19 +30,26 @@
 
   <main class="wrap">
     <div class="tiles">
-      <a class="tile" href="#docs-card"><span class="tile-num" id="docs-count">0</span><span class="tile-label">License / insurance</span></a>
+      <a class="tile" href="#insuranceExp-card"><span class="tile-num" id="insuranceExp-count">0</span><span class="tile-label">Car insurance</span></a>
+      <a class="tile" href="#licenseExp-card"><span class="tile-num" id="licenseExp-count">0</span><span class="tile-label">Driver's license</span></a>
       <a class="tile" href="#training-card"><span class="tile-num" id="training-count">0</span><span class="tile-label">Annual training</span></a>
       <a class="tile" href="#missing-card"><span class="tile-num" id="missing-count">0</span><span class="tile-label">Missing dates</span></a>
     </div>
 
-    <section class="card alert-card" id="docs-card">
-      <h2>Driver's license &amp; car insurance</h2>
-      <p class="small muted" id="docs-sub"></p>
-      <div id="docs-list"></div>
+    <section class="card alert-card" id="insuranceExp-card">
+      <h2>Car insurance</h2>
+      <p class="small muted" id="insuranceExp-sub"></p>
+      <div id="insuranceExp-list"></div>
+    </section>
+
+    <section class="card alert-card" id="licenseExp-card">
+      <h2>Driver's license</h2>
+      <p class="small muted" id="licenseExp-sub"></p>
+      <div id="licenseExp-list"></div>
     </section>
 
     <section class="card alert-card" id="training-card">
-      <h2>Annual training due</h2>
+      <h2>Annual training</h2>
       <p class="small muted" id="training-sub"></p>
       <div id="training-list"></div>
     </section>
@@ -67,8 +74,8 @@
             <tr>
               <th><button type="button" data-sort="name">Name</button></th>
               <th><button type="button" data-sort="hireDate">Hired</button></th>
-              <th><button type="button" data-sort="licenseExp">License expires</button></th>
               <th><button type="button" data-sort="insuranceExp">Insurance expires</button></th>
+              <th><button type="button" data-sort="licenseExp">License expires</button></th>
               <th><button type="button" data-sort="trainingDue">Training due</button></th>
               <th><button type="button" data-sort="lastTraining">Last training</button></th>
             </tr>
@@ -144,6 +151,23 @@
     </form>
   </dialog>
 
+  <!-- New license / insurance expiration date -->
+  <dialog id="renew-dialog" aria-labelledby="rd-title">
+    <form class="dialog-inner" id="renew-form" method="dialog">
+      <div class="dialog-head">
+        <h2 id="rd-title">New expiration date</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Close">✕</button>
+      </div>
+      <p id="rd-info"></p>
+      <label><span id="rd-label">New expiration date</span> <input type="date" name="date" required></label>
+      <div class="dialog-foot">
+        <span class="spacer"></span>
+        <button type="button" class="btn ghost" data-close>Cancel</button>
+        <button type="submit" class="btn" value="save">Save</button>
+      </div>
+    </form>
+  </dialog>
+
   <!-- Mark annual training completed -->
   <dialog id="done-dialog" aria-labelledby="dd-title">
     <form class="dialog-inner" id="done-form" method="dialog">
@@ -165,6 +189,6 @@
   <div id="toast" role="status" aria-live="polite" hidden><span id="toast-msg"></span><button type="button" id="toast-undo" hidden>Undo</button></div>
 
   <script src="config.js?v=2"></script>
-  <script src="app.js?v=1"></script>
+  <script src="app.js?v=2"></script>
 </body>
 </html>

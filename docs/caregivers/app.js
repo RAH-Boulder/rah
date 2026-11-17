@@ -277,6 +277,9 @@
     $("#ed-delete").hidden = !c;
     $("#ed-inactive").hidden = !c || !!c.inactive;
     FIELDS.forEach(f => { edForm.elements[f].value = c ? (c[f] || "") : ""; });
+    $("#ed-training-fields").hidden = !c;
+    edForm.elements.hireDate.required = !c;
+    $("#ed-inactive-wrap").hidden = !c; // new caregivers: worked out from the hire date
     edForm.elements.inactive.checked = !!(c && c.inactive);
     hireAtOpen = c ? c.hireDate || "" : "";
     dueHint();
@@ -299,7 +302,8 @@
   function dueHint() {
     const hire = edForm.elements.hireDate.value, due = edForm.elements.trainingDue.value;
     let msg = "";
-    if (isDate(hire) && !isDate(due)) msg = `First training would be due ${fmtLong(nextTraining(hire))}.`;
+    if (!editingId) msg = isDate(hire) ? `Annual training will be due ${fmtLong(nextTraining(hire))} (${CONFIG.trainingMonths} months after the hire date, on a weekday).` : `Annual training due date is worked out from the hire date.`;
+    else if (isDate(hire) && !isDate(due)) msg = `First training would be due ${fmtLong(nextTraining(hire))}.`;
     else if (isDate(due) && weekday(due) % 6 === 0) msg = "Note: this due date is on a weekend.";
     else if (isDate(hire) && due === nextTraining(hire)) msg = `${CONFIG.trainingMonths} months after the hire date, moved to the closest weekday.`;
     $("#ed-due-hint").textContent = msg;
@@ -310,7 +314,8 @@
     const v = {};
     FIELDS.forEach(f => { v[f] = edForm.elements[f].value.trim(); });
     if (!v.first || !v.last) return;
-    if (!v.trainingDue && isDate(v.hireDate) && !v.lastTraining) v.trainingDue = nextTraining(v.hireDate);
+    if (!editingId) { v.trainingDue = nextTraining(v.hireDate); v.lastTraining = ""; }
+    else if (!v.trainingDue && isDate(v.hireDate) && !v.lastTraining) v.trainingDue = nextTraining(v.hireDate);
     v.inactive = edForm.elements.inactive.checked;
     const dup = state.caregivers.find(c => c.id !== editingId && nameKey(c.first, c.last) === nameKey(v.first, v.last));
     if (dup && !confirm(`${fullName(dup)} is already on the list. Save anyway?`)) return;

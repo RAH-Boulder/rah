@@ -132,17 +132,17 @@
         <label>Last name <input type="text" name="last" required autocomplete="off"></label>
       </div>
       <label>Hire date <input type="date" name="hireDate"></label>
+      <p class="small muted hint" id="ed-due-hint"></p>
       <div class="field-grid">
         <label>Driver's license expires <input type="date" name="licenseExp"></label>
         <label>Car insurance expires <input type="date" name="insuranceExp"></label>
       </div>
-      <div class="field-grid">
+      <div class="field-grid" id="ed-training-fields">
         <label>Annual training due <input type="date" name="trainingDue"></label>
         <label>Last training completed <input type="date" name="lastTraining"></label>
       </div>
-      <p class="small muted hint" id="ed-due-hint"></p>
       <label>Notes <textarea name="notes" rows="2"></textarea></label>
-      <label class="check"><input type="checkbox" name="inactive"> Inactive (no longer working — hidden from the lists)</label>
+      <label class="check" id="ed-inactive-wrap"><input type="checkbox" name="inactive"> Inactive (no longer working — hidden from the lists)</label>
       <div class="dialog-foot">
         <button type="button" class="link danger" id="ed-delete" hidden>Delete caregiver</button>
         <button type="button" class="btn small ghost" id="ed-inactive" hidden>Make inactive</button>
@@ -191,6 +191,6 @@
   <div id="toast" role="status" aria-live="polite" hidden><span id="toast-msg"></span><button type="button" id="toast-undo" hidden>Undo</button></div>
 
   <script src="config.js?v=2"></script>
-  <script src="app.js?v=3"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>

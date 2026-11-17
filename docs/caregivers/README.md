@@ -25,8 +25,8 @@ midnight) it re-checks today's date and shows:
 - If that lands on a Saturday it moves to the Friday before; a Sunday moves to the Monday
   after. (Same as the old spreadsheet formula.)
 - Months work like Excel's EDATE: Jan 31 + 1 month = Feb 28.
-- When adding someone, the training due date fills itself in from the hire date. You can
-  type a different due date if you need to.
+- When adding someone, you only enter the hire date; the training due date is worked out
+  for you. (Opening an existing caregiver lets you correct it if ever needed.)
 
 ## Adding a caregiver
 

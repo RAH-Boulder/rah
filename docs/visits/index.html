@@ -9,7 +9,7 @@
   <meta name="robots" content="noindex, nofollow">
   <title>Supervisory Visits</title>
   <meta name="theme-color" content="#b5303a">
-  <link rel="stylesheet" href="style.css?v=1">
+  <link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
   <header class="top">
@@ -30,6 +30,7 @@
       <a class="tile" href="#due-card"><span class="tile-num" id="overdue-count">0</span><span class="tile-label">Overdue</span></a>
       <a class="tile" href="#due-card"><span class="tile-num" id="soon-count">0</span><span class="tile-label" id="soon-label">Due in next 2 weeks</span></a>
       <a class="tile" href="#due-card"><span class="tile-num" id="unsched-count">0</span><span class="tile-label">Not scheduled yet</span></a>
+      <a class="tile" href="#hold-card" hidden><span class="tile-num" id="hold-count">0</span><span class="tile-label">On hold</span></a>
       <a class="tile" href="#missing-card"><span class="tile-num" id="missing-count">0</span><span class="tile-label">Missing dates</span></a>
     </div>
 
@@ -45,6 +46,14 @@
         </div>
       </div>
       <div id="due-list"></div>
+    </section>
+
+    <section class="card" id="hold-card" hidden>
+      <details open>
+        <summary><h2>On hold</h2></summary>
+        <p class="small muted">Clients on hold (for example, in temporary nursing home care) aren't on the due list. Take them off hold when visits should start again.</p>
+        <div id="hold-list"></div>
+      </details>
     </section>
 
     <section class="card" id="missing-card">
@@ -107,7 +116,7 @@
       <h2>Spreadsheet file</h2>
       <p class="small">Download the whole list as a CSV file (opens in Excel or Google Sheets), or import one.
         Importing matches clients by name and updates their dates; anyone new is added.</p>
-      <p class="small muted">Columns: First name, Last name, Last visit, Next due, Scheduled visit, Notes. Dates like 11/17/2026 or 2026-11-17. A blank Next due is worked out from the last visit.</p>
+      <p class="small muted">Columns: First name, Last name, Last visit, Next due, Scheduled visit, Notes, On hold, Hold reason. Dates like 11/17/2026 or 2026-11-17. A blank Next due is worked out from the last visit.</p>
       <div class="btn-row">
         <button type="button" class="btn small" id="export-btn">Download CSV</button>
         <label class="btn small ghost file-btn">Import CSV
@@ -135,9 +144,11 @@
         <label>Scheduled visit <input type="date" name="scheduled"></label>
       </div>
       <label>Notes <textarea name="notes" rows="2"></textarea></label>
+      <label class="check" id="ed-hold-wrap"><input type="checkbox" name="onHold"> On hold (keep as a client, but off the due list)</label>
+      <label id="ed-hold-reason">Reason for hold <input type="text" name="holdReason" placeholder="e.g. Temporary nursing home care" autocomplete="off"></label>
       <label class="check" id="ed-inactive-wrap"><input type="checkbox" name="inactive"> Inactive (no longer a client — hidden from the lists)</label>
       <div class="dialog-foot">
-        <button type="button" class="link danger" id="ed-delete" hidden>Delete client</button>
+        <button type="button" class="btn small ghost grey" id="ed-delete" hidden>Remove client</button>
         <span class="spacer"></span>
         <button type="button" class="btn ghost" data-close>Cancel</button>
         <button type="submit" class="btn" value="save">Save</button>
@@ -164,6 +175,23 @@
     </form>
   </dialog>
 
+  <!-- Put a client on hold -->
+  <dialog id="hold-dialog" aria-labelledby="hd-title">
+    <form class="dialog-inner" id="hold-form" method="dialog">
+      <div class="dialog-head">
+        <h2 id="hd-title">Put on hold</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Close">✕</button>
+      </div>
+      <p>They'll stay a client but won't show on the due list until you take them off hold.</p>
+      <label>Reason (optional) <input type="text" name="reason" placeholder="e.g. Temporary nursing home care" autocomplete="off"></label>
+      <div class="dialog-foot">
+        <span class="spacer"></span>
+        <button type="button" class="btn ghost" data-close>Cancel</button>
+        <button type="submit" class="btn" value="save">Put on hold</button>
+      </div>
+    </form>
+  </dialog>
+
   <!-- Mark a visit completed -->
   <dialog id="done-dialog" aria-labelledby="dd-title">
     <form class="dialog-inner" id="done-form" method="dialog">
@@ -185,6 +213,6 @@
   <div id="toast" role="status" aria-live="polite" hidden><span id="toast-msg"></span><button type="button" id="toast-undo" hidden>Undo</button></div>
 
   <script src="config.js?v=1"></script>
-  <script src="app.js?v=2"></script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>

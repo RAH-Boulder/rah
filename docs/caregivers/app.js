@@ -103,16 +103,16 @@
 
   // ---------- Lists ----------
   const ITEMS = [
-    { key: "licenseExp", label: "Driver's license", word: "driver's license" },
-    { key: "insuranceExp", label: "Car insurance", word: "car insurance" }
+    { key: "insuranceExp", label: "Car insurance", word: "car insurance" },
+    { key: "licenseExp", label: "Driver's license", word: "driver's license" }
   ];
 
-  function expiringRows() {
+  function expiringRows(it) {
     const t = today(), rows = [];
-    active().forEach(c => ITEMS.forEach(it => {
+    active().forEach(c => {
       const d = c[it.key];
       if (isDate(d) && daysBetween(t, d) <= CONFIG.expiringDays) rows.push({ c, it, date: d, days: daysBetween(t, d) });
-    }));
+    });
     return rows.sort((a, b) => a.days - b.days || cmpName(a.c, b.c));
   }
   function trainingRows() {
@@ -133,24 +133,27 @@
   }
 
   function renderDocs() {
-    const rows = expiringRows();
-    $("#docs-count").textContent = rows.length;
-    $("#docs-count").parentElement.classList.toggle("hot", rows.length > 0);
-    $("#docs-sub").textContent = `Expired, or expiring in the next ${CONFIG.expiringDays} days (by ${fmt(fromMs(ms(today()) + CONFIG.expiringDays * 864e5))}).`;
-    $("#docs-list").innerHTML = rows.length ? rows.map(r => {
-      const st = status(r.days);
-      return `<div class="row">
-        <div class="row-main">
-          <button type="button" class="row-name" data-edit="${esc(r.c.id)}" data-focus="${r.it.key}">${esc(fullName(r.c))}</button>
-          <span class="row-what">${r.it.label} · ${fmtLong(r.date)}</span>
-          <span class="row-status ${st.cls}">${st.text}</span>
-        </div>
-        <div class="row-btns">
-          <button type="button" class="btn small" data-edit="${esc(r.c.id)}" data-focus="${r.it.key}">New date</button>
-          <button type="button" class="btn small ghost" data-copy="${esc(r.c.id)}" data-item="${r.it.key}">Copy message</button>
-        </div>
-      </div>`;
-    }).join("") : `<p class="all-clear">✓ No licenses or insurances expiring in the next ${CONFIG.expiringDays} days.</p>`;
+    const by = fmt(fromMs(ms(today()) + CONFIG.expiringDays * 864e5));
+    ITEMS.forEach(it => {
+      const rows = expiringRows(it), k = it.key;
+      $(`#${k}-count`).textContent = rows.length;
+      $(`#${k}-count`).parentElement.classList.toggle("hot", rows.length > 0);
+      $(`#${k}-sub`).textContent = `Expired, or expiring in the next ${CONFIG.expiringDays} days (by ${by}).`;
+      $(`#${k}-list`).innerHTML = rows.length ? rows.map(r => {
+        const st = status(r.days);
+        return `<div class="row">
+          <div class="row-main">
+            <button type="button" class="row-name" data-edit="${esc(r.c.id)}">${esc(fullName(r.c))}</button>
+            <span class="row-what">${r.days < 0 ? "Expired" : "Expires"} ${fmtLong(r.date)}</span>
+            <span class="row-status ${st.cls}">${st.text}</span>
+          </div>
+          <div class="row-btns">
+            <button type="button" class="btn small" data-renew="${esc(r.c.id)}" data-item="${k}">Enter new expiration date</button>
+            <button type="button" class="btn small ghost" data-copy="${esc(r.c.id)}" data-item="${k}">Copy message</button>
+          </div>
+        </div>`;
+      }).join("") : `<p class="all-clear">✓ No ${it.word} expired or expiring in the next ${CONFIG.expiringDays} days.</p>`;
+    });
   }
 
   function renderTraining() {
@@ -210,7 +213,7 @@
     $("#all-count").textContent = `${n} active`;
     $("#roster").innerHTML = list.map(c => `<tr data-edit="${esc(c.id)}" class="${c.inactive ? "inactive" : ""}" tabindex="0">
       <td class="name">${esc(fullName(c))}${c.inactive ? ' <span class="tag">inactive</span>' : ""}</td>
-      ${cellDate(c.hireDate)}${cellDate(c.licenseExp, CONFIG.expiringDays)}${cellDate(c.insuranceExp, CONFIG.expiringDays)}${cellDate(c.trainingDue, CONFIG.trainingDays)}${cellDate(c.lastTraining)}
+      ${cellDate(c.hireDate)}${cellDate(c.insuranceExp, CONFIG.expiringDays)}${cellDate(c.licenseExp, CONFIG.expiringDays)}${cellDate(c.trainingDue, CONFIG.trainingDays)}${cellDate(c.lastTraining)}
     </tr>`).join("");
     $("#roster-empty").hidden = state.caregivers.length > 0;
   }
@@ -224,7 +227,7 @@
 
   // ---------- Clicks ----------
   document.addEventListener("click", e => {
-    const t = e.target.closest("[data-edit],[data-done],[data-copy],[data-sort],[data-close]");
+    const t = e.target.closest("[data-edit],[data-done],[data-renew],[data-copy],[data-sort],[data-close]");
     if (!t) return;
     if (t.dataset.close !== undefined) { t.closest("dialog").close(); return; }
     if (t.dataset.sort) {
@@ -232,6 +235,7 @@
       save(); renderRoster(); return;
     }
     if (t.dataset.done) { openDone(t.dataset.done); return; }
+    if (t.dataset.renew) { openRenew(t.dataset.renew, t.dataset.item); return; }
     if (t.dataset.copy) { copyMessage(t.dataset.copy, t.dataset.item); return; }
     if (t.dataset.edit) openEdit(t.dataset.edit, t.dataset.focus);
   });
@@ -323,6 +327,34 @@
       delete state.removed[c.id];
       c.updated = stamp(); state.caregivers.push(c);
       save(true); renderAll();
+    });
+  });
+
+  // ---------- New license / insurance date ----------
+  const rd = $("#renew-dialog"), rdForm = $("#renew-form");
+  let renewId = null, renewKey = null;
+  function openRenew(id, key) {
+    const c = byId(id), it = ITEMS.find(i => i.key === key);
+    if (!c || !it) return;
+    renewId = id; renewKey = key;
+    $("#rd-title").textContent = fullName(c);
+    const d = c[key];
+    $("#rd-info").textContent = `${it.label} ${daysBetween(today(), d) < 0 ? "expired" : "expires"} ${fmtLong(d)}.`;
+    $("#rd-label").textContent = `New ${it.word} expiration date`;
+    rdForm.elements.date.value = "";
+    rd.showModal();
+    rdForm.elements.date.focus();
+  }
+  rdForm.addEventListener("submit", e => {
+    e.preventDefault();
+    const c = byId(renewId), it = ITEMS.find(i => i.key === renewKey), d = rdForm.elements.date.value;
+    if (!c || !it || !isDate(d)) return;
+    if (daysBetween(today(), d) < 0 && !confirm(`${fmt(d)} is in the past. Save it anyway?`)) return;
+    const before = c[it.key];
+    c[it.key] = d; c.updated = stamp();
+    save(true); rd.close(); renderAll();
+    toast(`${fullName(c)}: ${it.word} now expires ${fmt(d)}.`, () => {
+      c[it.key] = before; c.updated = stamp(); save(true); renderAll();
     });
   });
 

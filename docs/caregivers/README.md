@@ -6,8 +6,8 @@ insurance** expire and when their **annual training** is due. No server, no buil
 Every time the page is opened (or you come back to the tab, or the date rolls over at
 midnight) it re-checks today's date and shows:
 
-- **Driver's license & car insurance**: anything already expired, or expiring in the
-  next 10 days. **New date** updates it; **Copy message** copies a ready-to-send text
+- **Car insurance** and **Driver's license** (two separate lists): anything already expired, or expiring in the
+  next 10 days. **Enter new expiration date** saves the new one; **Copy message** copies a ready-to-send text
   ("Hi Doreena! It looks like your car insurance is expiring soon on 11/20…").
 - **Annual training due**: anyone overdue, or due in the next 30 days. **Mark completed**
   records the date and sets the next due date.

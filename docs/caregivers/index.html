@@ -81,7 +81,7 @@
           <tbody id="roster"></tbody>
         </table>
       </div>
-      <p class="empty" id="roster-empty" hidden>No caregivers yet. Click <b>+ Add caregiver</b>, or import a spreadsheet below.</p>
+      <p class="empty" id="roster-empty" hidden>No caregivers yet. Click <b>+ Add caregiver</b>, or connect to the Google Sheet below.</p>
     </section>
 
     <section class="card data-card" id="sync-card">
@@ -102,25 +102,8 @@
         <button type="button" class="link danger" id="sync-off-btn">Disconnect this device</button>
       </div>
       <p class="small warn-note" id="weak-note" hidden>Your passcode is short, so it could eventually be guessed. Change it to at least 12 characters (for example four unrelated words) under Apps Script → Project Settings → Script properties, then connect again.</p>
-      <div class="forget">
-        <h3>Using a shared computer?</h3>
-        <p class="small muted">Once connected, anyone who opens this page on this computer can see and change the list. <b>Forget this computer</b> erases the list and the passcode from this browser. Nothing is removed from the Google Sheet.</p>
-        <button type="button" class="btn small ghost" id="forget-btn">Forget this computer</button>
-      </div>
     </section>
 
-    <section class="card">
-      <h2>Spreadsheet file</h2>
-      <p class="small">Download the whole list as a CSV file (opens in Excel or Google Sheets), or import one.
-        Importing matches caregivers by name and updates their dates; anyone new is added.</p>
-      <p class="small muted">Columns: First name, Last name, Hire date, License expires, Insurance expires, Training due, Last training, Notes. Dates like 11/17/2026 or 2026-11-17. A blank Training due is worked out from the hire date.</p>
-      <div class="btn-row">
-        <button type="button" class="btn small" id="export-btn">Download CSV</button>
-        <label class="btn small ghost file-btn">Import CSV
-          <input type="file" id="import-input" accept=".csv,text/csv">
-        </label>
-      </div>
-    </section>
   </main>
 
   <!-- Add / edit a caregiver -->
@@ -194,6 +177,6 @@
   <div id="toast" role="status" aria-live="polite" hidden><span id="toast-msg"></span><button type="button" id="toast-undo" hidden>Undo</button></div>
 
   <script src="config.js?v=3"></script>
-  <script src="app.js?v=5"></script>
+  <script src="app.js?v=6"></script>
 </body>
 </html>

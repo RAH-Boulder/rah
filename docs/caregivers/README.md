@@ -45,16 +45,8 @@ This repository is public, so **no caregiver data is stored in it**. The list li
 2. **This browser**: everything is saved on the computer too, so the page works offline.
    Without the sheet, each computer/browser has its own separate list.
 
-On a shared computer, **Forget this computer** (in the Google Sheet box) erases the list and
-the passcode from that browser; the sheet keeps everything.
-
 The page loads nothing from other sites except the Google Sheet script: its font (Inter,
 SIL Open Font License, `fonts/Inter-LICENSE.txt`) is served from this folder.
-
-**Download CSV** saves the whole list as a spreadsheet (a good backup).
-**Import CSV** loads one: caregivers are matched by name and their dates updated; new
-names are added. Columns: First name, Last name, Hire date, License expires,
-Insurance expires, Training due, Last training, Notes.
 
 ## Settings (`config.js`)
 

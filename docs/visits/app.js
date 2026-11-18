@@ -220,6 +220,10 @@
   let renderedDay = "";
   function renderAll() {
     renderedDay = today();
+    if (!unlocked()) { // locked: keep every client name out of the page
+      ["#due-list", "#hold-list", "#missing-list", "#roster"].forEach(sel => { $(sel).innerHTML = ""; });
+      return;
+    }
     $("#today").textContent = "Today: " + fmtLong(renderedDay);
     renderDue(); renderHold(); renderMissing(); renderRoster();
   }
@@ -578,8 +582,12 @@
   // ---------- Google Sheet sync ----------
   // Every device sends all its records; the sheet keeps the newest copy of each (by `updated`)
   // and sends everything back.
-  const syncUrl = () => CONFIG.sheetUrl || state.settings.syncUrl || "";
+  // The client list is only shown once this browser has connected with the right passcode.
+  const syncUrl = () => CONFIG.sheetUrl || "";
   const syncOn = () => !!(syncUrl() && state.settings.syncKey);
+  const unlocked = () => syncOn() && !!state.settings.verified;
+  delete state.settings.syncUrl; // no longer typed in or shown on the page
+  if (state.settings.lastSync && state.settings.syncKey) state.settings.verified = true; // connected before this check existed
   let syncTimer = null, syncing = false, syncAgain = false, syncError = "";
 
   function scheduleSync(delay) {
@@ -633,16 +641,25 @@
       });
       const j = await res.json();
       if (!j.ok) {
-        if (j.error === "passcode") { delete state.settings.syncKey; save(); toast("The Google Sheet passcode is wrong. Enter it again at the bottom of the page."); }
+        if (j.error === "passcode") {
+          // Wrong passcode, or it has been changed: lock the page. If this browser had been
+          // connected before, also erase its copy of the list (the sheet keeps everything).
+          if (state.settings.verified) { state.clients = []; state.removed = {}; delete state.settings.lastSync; }
+          delete state.settings.syncKey; delete state.settings.verified; save(); renderAll(); applyLock();
+          toast("That passcode isn't right. Please enter it again.");
+        }
         syncError = j.error || "error";
         setSyncPill("bad"); return;
       }
       $("#weak-note").hidden = !j.weak;
       applyServer(j);
+      const firstTime = !state.settings.verified;
+      state.settings.verified = true;
       state.settings.lastSync = stamp(); syncError = "";
       save();
-      if (manual) toast("Synced with the Google Sheet.");
+      if (manual) toast(firstTime ? "Connected. The client list is loaded." : "Synced with the Google Sheet.");
       if (!document.querySelector("dialog[open]")) renderAll();
+      applyLock();
       setSyncPill("ok");
     } catch (e) {
       syncError = "network"; setSyncPill("bad");
@@ -661,49 +678,51 @@
     const [txt, cls] = map[st] || map.ok;
     el.textContent = txt; el.className = "sync-pill " + cls;
   }
+  // Locked: only the passcode box is shown. Unlocked: the lists, buttons and sync status.
+  function applyLock() {
+    const open = unlocked();
+    $("#app-content").hidden = !open;
+    $("#file-card").hidden = !open;
+    $("#add-btn").hidden = !open;
+    $("#sync-card").classList.toggle("data-card", open);
+    $("#sync-title").textContent = open ? "Google Sheet" : "Enter passcode";
+    $(".forget").hidden = !open;
+    if (!open) document.querySelectorAll("dialog[open]").forEach(d => d.close());
+  }
   function renderSyncCard() {
-    const on = syncOn();
-    $("#sync-form").hidden = on;
-    $("#sync-connected").hidden = !on;
-    $("#sync-url-wrap").hidden = !!CONFIG.sheetUrl;
+    const on = syncOn(), open = unlocked();
+    $("#sync-form").hidden = open;
+    $("#sync-connected").hidden = !open;
+    $("#sync-form button[type=submit]").disabled = on && !open; // checking the passcode
     let msg;
-    if (!on) msg = syncError === "passcode" ? "Wrong passcode — try again." : "Not connected. The client list is only saved in this browser.";
+    if (!CONFIG.sheetUrl) msg = "This page isn't linked to its Google Sheet yet (sheetUrl in config.js).";
+    else if (on && !open) msg = syncError === "network" || syncError === "offline" ? "Couldn't reach the Google Sheet. Check the internet connection and try again." : "Checking the passcode…";
+    else if (!on) msg = syncError === "passcode" ? "Wrong passcode — try again." : "This page shows the supervisory visit list once you enter the team passcode.";
     else if (syncError === "network" || syncError === "offline") msg = "Couldn't reach the sheet. Changes are saved here and will sync when you're back online.";
     else if (syncError === "not set up") msg = "The sheet's script has no PASSCODE set yet. See the setup steps.";
     else if (syncError) msg = "The sheet reported a problem: " + syncError;
     else msg = state.settings.lastSync ? `Connected. Last synced ${new Date(state.settings.lastSync).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}.` : "Connected.";
     $("#sync-status").textContent = msg;
-    $("#sync-card").classList.toggle("warn-card", !on);
+    $("#sync-card").classList.toggle("warn-card", !open);
+    applyLock();
   }
   $("#sync-form").addEventListener("submit", e => {
     e.preventDefault();
-    const key = $("#sync-key").value.trim(), url = $("#sync-url").value.trim();
-    if (!CONFIG.sheetUrl) {
-      if (!/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(url)) { toast("That doesn't look like an Apps Script web app URL (it ends in /exec)."); return; }
-      state.settings.syncUrl = url;
-    }
-    if (!key) return;
+    const key = $("#sync-key").value.trim();
+    if (!key || !CONFIG.sheetUrl) return;
     state.settings.syncKey = key; syncError = "";
     $("#sync-key").value = "";
     save(); renderSyncCard();
     syncNow(true);
   });
   $("#sync-now-btn").addEventListener("click", () => syncNow(true));
-  $("#sync-off-btn").addEventListener("click", () => {
-    if (!confirm("Stop syncing this computer? The list stays saved in this browser and in the sheet. (To erase it from this browser, use Forget this computer.)")) return;
-    delete state.settings.syncKey; save(); setSyncPill(); renderSyncCard();
-  });
   $("#forget-btn").addEventListener("click", () => {
-    const msg = syncOn()
-      ? "Erase the client list and the passcode from this browser? The Google Sheet keeps everything, and you can connect again with the passcode."
-      : "This computer isn't connected to the Google Sheet, so this list is only saved here. Erase it anyway? (Download CSV first if you want a copy.)";
-    if (!confirm(msg)) return;
+    if (!confirm("Disconnect this computer? The client list and the passcode are erased from this browser, and the passcode will be needed to see the list again. The Google Sheet keeps everything.")) return;
     clearTimeout(syncTimer);
     try { localStorage.removeItem(STORE_KEY); } catch (e) { /* ignore */ }
     location.reload();
   });
   $("#sync-pill").addEventListener("click", () => $("#sync-card").scrollIntoView({ behavior: "smooth" }));
-  $("#sync-url").value = state.settings.syncUrl || "";
 
   // ---------- Keep the lists current ----------
   // Opening or returning to the page re-checks the dates (and the sheet), and the lists roll

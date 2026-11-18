@@ -66,7 +66,7 @@
     if (n === -1) return "yesterday";
     return n > 0 ? `in ${n} days` : `${-n} days ago`;
   }
-  // Typed or imported dates: 2026-11-17, 11/17/2026, 11/17/26, 11-17-2026.
+  // Typed or synced dates: 2026-11-17, 11/17/2026, 11/17/26, 11-17-2026.
   function parseDate(v) {
     const s = String(v == null ? "" : v).trim();
     if (!s) return "";
@@ -410,96 +410,7 @@
     });
   });
 
-  // ---------- CSV ----------
-  const CSV_COLS = [
-    ["First name", "first"], ["Last name", "last"], ["Hire date", "hireDate"], ["License expires", "licenseExp"],
-    ["Insurance expires", "insuranceExp"], ["Training due", "trainingDue"], ["Last training", "lastTraining"],
-    ["Notes", "notes"], ["Inactive", "inactive"], ["Caregiver ID", "id"]
-  ];
   const DATE_FIELDS = ["hireDate", "licenseExp", "insuranceExp", "trainingDue", "lastTraining"];
-  function csvCell(v) {
-    let s = String(v == null ? "" : v);
-    if (/^[=+\-@]/.test(s)) s = "'" + s; // never run as a formula in Excel
-    return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-  }
-  $("#export-btn").addEventListener("click", () => {
-    const list = state.caregivers.slice().sort(cmpName);
-    const lines = [CSV_COLS.map(c => c[0]).join(",")].concat(list.map(c => CSV_COLS.map(([, k]) => {
-      if (k === "inactive") return c.inactive ? "Yes" : "";
-      return csvCell(DATE_FIELDS.includes(k) ? fmt(c[k]) : c[k]);
-    }).join(",")));
-    const blob = new Blob(["﻿" + lines.join("\r\n") + "\r\n"], { type: "text/csv;charset=utf-8" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `Caregivers ${today()}.csv`;
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  });
-
-  function parseCsv(text) {
-    const rows = []; let row = [], cell = "", q = false;
-    text = text.replace(/^﻿/, "");
-    for (let i = 0; i < text.length; i++) {
-      const ch = text[i];
-      if (q) {
-        if (ch === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; }
-        else cell += ch;
-      } else if (ch === '"') q = true;
-      else if (ch === ",") { row.push(cell); cell = ""; }
-      else if (ch === "\n" || ch === "\r") {
-        if (ch === "\r" && text[i + 1] === "\n") i++;
-        row.push(cell); rows.push(row); row = []; cell = "";
-      } else cell += ch;
-    }
-    if (cell || row.length) { row.push(cell); rows.push(row); }
-    return rows.filter(r => r.some(c => c.trim()));
-  }
-  const headKey = h => String(h).toLowerCase().replace(/[^a-z]/g, "");
-  const HEAD_ALIASES = {
-    firstname: "first", first: "first", lastname: "last", last: "last", hiredate: "hireDate", hired: "hireDate",
-    licenseexpires: "licenseExp", driverlicenseexpirationdate: "licenseExp", licenseexpirationdate: "licenseExp", license: "licenseExp",
-    insuranceexpires: "insuranceExp", insuranceexpirationdate: "insuranceExp", insurance: "insuranceExp",
-    trainingdue: "trainingDue", annualtrainingduedate: "trainingDue", lasttraining: "lastTraining", lasttrainingcompleted: "lastTraining",
-    notes: "notes", inactive: "inactive", caregiverid: "id"
-  };
-
-  $("#import-input").addEventListener("change", async e => {
-    const file = e.target.files[0];
-    e.target.value = "";
-    if (!file) return;
-    let rows;
-    try { rows = parseCsv(await file.text()); } catch (err) { toast("Couldn't read that file."); return; }
-    const hi = rows.findIndex(r => r.some(c => HEAD_ALIASES[headKey(c)] === "first"));
-    if (hi < 0) { toast('No "First name" column found in that file.'); return; }
-    const map = rows[hi].map(h => HEAD_ALIASES[headKey(h)] || null);
-    let added = 0, updated = 0, skipped = [];
-    const now = stamp();
-    rows.slice(hi + 1).forEach((r, n) => {
-      const v = {};
-      map.forEach((k, j) => { if (k) v[k] = String(r[j] == null ? "" : r[j]).trim().replace(/^'(?=[=+\-@])/, ""); });
-      if (!v.first && !v.last) return;
-      const bad = [];
-      DATE_FIELDS.forEach(k => {
-        if (!(k in v)) return;
-        const d = parseDate(v[k]);
-        if (d === null) { bad.push(v[k]); delete v[k]; } else v[k] = d;
-      });
-      if (bad.length) skipped.push(`row ${hi + n + 2} (${bad.join(", ")})`);
-      if ("inactive" in v) v.inactive = /^(yes|y|true|x|1)$/i.test(v.inactive);
-      const existing = (v.id && byId(v.id)) || state.caregivers.find(c => nameKey(c.first, c.last) === nameKey(v.first, v.last));
-      if (!existing && !v.trainingDue && isDate(v.hireDate) && !v.lastTraining) v.trainingDue = nextTraining(v.hireDate);
-      if (existing) {
-        Object.keys(v).forEach(k => { if (k !== "id" && (v[k] !== "" || k === "notes")) existing[k] = v[k]; });
-        existing.updated = now; updated++;
-      } else {
-        const id = v.id && !state.removed[v.id] ? v.id : uid();
-        state.caregivers.push(Object.assign({ first: "", last: "", hireDate: "", licenseExp: "", insuranceExp: "", trainingDue: "", lastTraining: "", notes: "" }, v, { id, updated: now }));
-        added++;
-      }
-    });
-    save(true); renderAll();
-    toast(`Imported: ${added} added, ${updated} updated.` + (skipped.length ? ` Dates not understood in ${skipped.slice(0, 3).join("; ")}${skipped.length > 3 ? "…" : ""}.` : ""));
-  });
 
   // ---------- Google Sheet sync ----------
   // Every device sends all its records; the sheet keeps the newest copy of each (by `updated`)
@@ -613,17 +524,8 @@
   });
   $("#sync-now-btn").addEventListener("click", () => syncNow(true));
   $("#sync-off-btn").addEventListener("click", () => {
-    if (!confirm("Stop syncing this computer? The list stays saved in this browser and in the sheet. (To erase it from this browser, use Forget this computer.)")) return;
+    if (!confirm("Stop syncing this computer? The list stays saved in this browser and in the sheet.")) return;
     delete state.settings.syncKey; save(); setSyncPill(); renderSyncCard();
-  });
-  $("#forget-btn").addEventListener("click", () => {
-    const msg = syncOn()
-      ? "Erase the caregiver list and the passcode from this browser? The Google Sheet keeps everything, and you can connect again with the passcode."
-      : "This computer isn't connected to the Google Sheet, so this list is only saved here. Erase it anyway? (Download CSV first if you want a copy.)";
-    if (!confirm(msg)) return;
-    clearTimeout(syncTimer);
-    try { localStorage.removeItem(STORE_KEY); } catch (e) { /* ignore */ }
-    location.reload();
   });
   $("#sync-pill").addEventListener("click", () => $("#sync-card").scrollIntoView({ behavior: "smooth" }));
   $("#sync-url").value = state.settings.syncUrl || "";

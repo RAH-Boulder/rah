@@ -118,7 +118,6 @@ Last training · Notes · Inactive · Deleted · Caregiver ID · Updated
 6. Copy the **Web app URL** (ends in `/exec`). Either put it in
    `docs/caregivers/config.js` as `sheetUrl`, or paste it on the page under **Google Sheet**.
 7. Open the page, enter the URL and passcode under **Google Sheet**, click **Connect**.
-   Then **Import CSV** your starting list once; it's sent to the sheet automatically.
    Other computers only need step 7.
 
 ## Editing in the sheet
@@ -140,11 +139,11 @@ same URL.
 - Without the passcode it does nothing and returns nothing. Each wrong try is slowed down
   (2 seconds, or 5 once there have been many), but the right passcode always works, so
   nobody can lock you out by guessing. The passcode is kept only in the script's properties
-  and in the browsers you connect — never in the website's code or in downloaded CSV files.
+  and in the browsers you connect — never in the website's code.
 - Use a passcode of at least 12 characters, e.g. four unrelated words. The page shows a
   warning if it's shorter.
 - A connected browser stays unlocked: anyone who opens the page on that computer can see
-  and change the list. On a shared computer, use **Forget this computer** when you're done.
+  and change the list, so only connect your own work computers.
 - If something is changed or deleted by mistake, **File → Version history** in the sheet
   can restore an earlier copy.
 - Anyone with both the passcode and the URL can read and change the list, so treat the

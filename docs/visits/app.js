@@ -80,6 +80,17 @@
   const byId = id => state.clients.find(c => c.id === id);
   const active = () => state.clients.filter(c => !c.inactive);
   const tracked = () => active().filter(c => !c.onHold); // on hold: off the due list
+
+  // Status: Active, On hold (still a client, off the due list), or Ended care / Deceased
+  // (no longer a client: off every list, record kept).
+  const STATUS = [["active", "Active"], ["hold", "On hold"], ["ended", "Ended care"], ["deceased", "Deceased"]];
+  const statusLabel = k => (STATUS.find(x => x[0] === k) || STATUS[0])[1];
+  const statusOf = c => (c.inactive ? (c.endReason === "deceased" ? "deceased" : "ended") : c.onHold ? "hold" : "active");
+  function statusSelect(c) {
+    const cur = statusOf(c);
+    return `<select class="status-select" data-status="${esc(c.id)}" aria-label="Status for ${esc(fullName(c))}">${STATUS.map(([k, l]) =>
+      `<option value="${k}"${k === cur ? " selected" : ""}>${l}</option>`).join("")}</select>`;
+  }
   const cmpName = (a, b) => (a.last || "").localeCompare(b.last || "") || (a.first || "").localeCompare(b.first || "");
   const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
 
@@ -147,7 +158,7 @@
         <div class="row-btns">
           <button type="button" class="btn small${has ? " ghost" : ""}" data-sched="${id}">${isDate(r.c.scheduled) ? "Change scheduled date" : "Enter scheduled date"}</button>
           <button type="button" class="btn small${has ? "" : " ghost"}" data-done="${id}">Mark completed</button>
-          <button type="button" class="btn small ghost grey" data-hold="${id}">Put on hold</button>
+          ${statusSelect(r.c)}
         </div>
       </div>`;
     }).join("") : `<p class="all-clear">✓ No supervisory visits are overdue or due in the next ${CONFIG.dueSoonDays} days.</p>`;
@@ -178,7 +189,7 @@
         <div class="row-main"><button type="button" class="row-name" data-edit="${esc(c.id)}">${esc(fullName(c))}</button>
         <span class="row-what">${esc(c.holdReason || "On hold")}${c.holdSince ? ` · since ${fmt(c.holdSince)}` : ""}</span>
         <span class="row-what">${due}${isDate(c.lastVisit) ? ` · last visit ${fmt(c.lastVisit)}` : ""}</span></div>
-        <div class="row-btns"><button type="button" class="btn small ghost" data-unhold="${esc(c.id)}">Take off hold</button></div>
+        <div class="row-btns">${statusSelect(c)}</div>
       </div>`;
     }).join("");
   }
@@ -207,10 +218,11 @@
       const dueCls = n == null || c.onHold ? "" : n < 0 ? "late" : n <= CONFIG.dueSoonDays ? "soon" : "";
       const schedCls = isDate(c.scheduled) && c.scheduled >= t ? "sched" : "";
       return `<tr data-edit="${esc(c.id)}" class="${c.inactive ? "inactive" : ""}" tabindex="0">
-        <td class="name">${esc(fullName(c))}${c.inactive ? ' <span class="tag">inactive</span>' : c.onHold ? ' <span class="tag hold">on hold</span>' : ""}</td>
+        <td class="name">${esc(fullName(c))}${c.inactive ? ` <span class="tag">${statusLabel(statusOf(c)).toLowerCase()}${c.endedOn ? " " + fmt(c.endedOn) : ""}</span>` : c.onHold ? ' <span class="tag hold">on hold</span>' : ""}</td>
         ${cellDate(c.lastVisit)}${cellDate(c.nextDue, dueCls)}${cellDate(c.scheduled, schedCls)}
         <td class="act-col">${c.inactive ? "" : `<button type="button" class="btn small ghost grey" data-sched="${esc(c.id)}">Schedule</button>
           <button type="button" class="btn small ghost grey" data-done="${esc(c.id)}">Completed</button>`}
+          ${statusSelect(c)}
           <button type="button" class="btn small ghost grey" data-remove="${esc(c.id)}">Remove</button></td>
       </tr>`;
     }).join("");
@@ -230,7 +242,8 @@
 
   // ---------- Clicks ----------
   document.addEventListener("click", e => {
-    const t = e.target.closest("[data-edit],[data-done],[data-sched],[data-hold],[data-unhold],[data-remove],[data-sort],[data-close]");
+    if (e.target.closest("select")) return; // the status dropdown (inside a clickable row)
+    const t = e.target.closest("[data-edit],[data-done],[data-sched],[data-remove],[data-sort],[data-close]");
     if (!t) return;
     if (t.dataset.close !== undefined) { t.closest("dialog").close(); return; }
     if (t.dataset.sort) {
@@ -239,10 +252,17 @@
     }
     if (t.dataset.done) { openDone(t.dataset.done); return; }
     if (t.dataset.sched) { openSched(t.dataset.sched); return; }
-    if (t.dataset.hold) { openHold(t.dataset.hold); return; }
     if (t.dataset.remove) { removeClient(t.dataset.remove); return; }
-    if (t.dataset.unhold) { setHold(t.dataset.unhold, false); return; }
     if (t.dataset.edit) openEdit(t.dataset.edit, t.dataset.focus);
+  });
+  document.addEventListener("change", e => {
+    const sel = e.target.closest("select[data-status]");
+    if (!sel) return;
+    const c = byId(sel.dataset.status), st = sel.value;
+    if (!c) return;
+    if (st === "hold") { openHold(c.id); return; }
+    if ((st === "ended" || st === "deceased") && !confirm(`Mark ${fullName(c)} as ${statusLabel(st).toLowerCase()}? They'll come off the visit lists. Their record is kept (tick "Show ended care & deceased" under All clients to see it).`)) { renderAll(); return; }
+    setStatus(c.id, st);
   });
   $("#roster").addEventListener("keydown", e => {
     const tr = e.target.closest("tr[data-edit]");
@@ -284,10 +304,8 @@
     FIELDS.forEach(f => { edForm.elements[f].value = c ? (c[f] || "") : ""; });
     $("#ed-more-fields").hidden = !c;
     edForm.elements.lastVisit.required = !c;
-    $("#ed-inactive-wrap").hidden = !c;
-    edForm.elements.inactive.checked = !!(c && c.inactive);
-    edForm.elements.onHold.checked = !!(c && c.onHold);
-    $("#ed-hold-wrap").hidden = !c;
+    $("#ed-status-wrap").hidden = !c;
+    edForm.elements.status.value = c ? statusOf(c) : "active";
     holdReasonShown();
     visitAtOpen = c ? c.lastVisit || "" : "";
     lastVisitSeen = visitAtOpen;
@@ -306,8 +324,8 @@
     edHint();
   });
   edForm.elements.nextDue.addEventListener("change", edHint);
-  function holdReasonShown() { $("#ed-hold-reason").hidden = !edForm.elements.onHold.checked; }
-  edForm.elements.onHold.addEventListener("change", holdReasonShown);
+  function holdReasonShown() { $("#ed-hold-reason").hidden = edForm.elements.status.value !== "hold"; }
+  edForm.elements.status.addEventListener("change", holdReasonShown);
   function edHint() {
     const v = edForm.elements.lastVisit.value, due = edForm.elements.nextDue.value;
     let msg = "";
@@ -331,11 +349,8 @@
       if (v.lastVisit > today()) { v.scheduled = v.nextDue = v.lastVisit; v.lastVisit = ""; }
       else { v.nextDue = nextVisit(v.lastVisit); v.scheduled = ""; }
     } else if (!v.nextDue && isDate(v.lastVisit)) v.nextDue = nextVisit(v.lastVisit);
-    v.inactive = edForm.elements.inactive.checked;
-    v.onHold = edForm.elements.onHold.checked;
-    if (!v.onHold) v.holdReason = "";
     const prev = editingId ? byId(editingId) : null;
-    v.holdSince = v.onHold ? (prev && prev.onHold && prev.holdSince) || today() : "";
+    Object.assign(v, statusFields(editingId ? edForm.elements.status.value : "active", v.holdReason, prev));
     const dup = state.clients.find(c => c.id !== editingId && nameKey(c.first, c.last) === nameKey(v.first, v.last));
     if (dup && !confirm(`${fullName(dup)} is already on the list. Save anyway?`)) return;
     if (editingId) {
@@ -423,20 +438,36 @@
   }
   hdForm.addEventListener("submit", e => {
     e.preventDefault();
-    setHold(holdId, true, hdForm.elements.reason.value.trim());
+    const id = holdId;
+    holdId = null;
     hd.close();
+    setStatus(id, "hold", hdForm.elements.reason.value.trim());
   });
-  function setHold(id, on, reason) {
+  hd.addEventListener("close", () => { if (holdId) { holdId = null; renderAll(); } }); // cancelled: reset the dropdown
+
+  // The fields that go with each status. `prev` keeps the start date when nothing changed.
+  function statusFields(st, reason, prev) {
+    const was = prev ? statusOf(prev) : "active";
+    const f = { onHold: false, holdReason: "", holdSince: "", inactive: false, endReason: "", endedOn: "" };
+    if (st === "hold") Object.assign(f, { onHold: true, holdReason: reason || "", holdSince: (was === "hold" && prev.holdSince) || today() });
+    if (st === "ended" || st === "deceased") Object.assign(f, { inactive: true, endReason: st, endedOn: (was === st && prev.endedOn) || today() });
+    return f;
+  }
+  function setStatus(id, st, reason) {
     const c = byId(id);
     if (!c) return;
-    const before = { onHold: !!c.onHold, holdReason: c.holdReason || "", holdSince: c.holdSince || "" };
-    c.onHold = on;
-    c.holdReason = on ? reason || "" : "";
-    c.holdSince = on ? today() : "";
-    c.updated = stamp();
+    const was = statusOf(c);
+    const before = { onHold: !!c.onHold, holdReason: c.holdReason || "", holdSince: c.holdSince || "", inactive: !!c.inactive, endReason: c.endReason || "", endedOn: c.endedOn || "" };
+    Object.assign(c, statusFields(st, reason, c), { updated: stamp() });
     save(true); renderAll();
-    let msg = on ? `${fullName(c)} is on hold and off the due list.` : `${fullName(c)} is off hold.`;
-    if (!on && isDate(c.nextDue) && daysBetween(today(), c.nextDue) < 0) msg += ` Their visit was due ${fmt(c.nextDue)}, so they're on the overdue list.`;
+    let msg;
+    if (st === "hold") msg = `${fullName(c)} is on hold and off the due list.`;
+    else if (st === "ended") msg = `${fullName(c)}: care ended. They're off the visit lists.`;
+    else if (st === "deceased") msg = `${fullName(c)} is marked deceased and is off the visit lists.`;
+    else {
+      msg = was === "hold" ? `${fullName(c)} is off hold.` : `${fullName(c)} is an active client again.`;
+      if (isDate(c.nextDue) && daysBetween(today(), c.nextDue) < 0) msg += ` Their visit was due ${fmt(c.nextDue)}, so they're on the overdue list.`;
+    }
     toast(msg, () => { Object.assign(c, before, { updated: stamp() }); save(true); renderAll(); });
   }
 
@@ -483,7 +514,7 @@
   const CSV_COLS = [
     ["First name", "first"], ["Last name", "last"], ["Last visit", "lastVisit"], ["Next due", "nextDue"],
     ["Scheduled visit", "scheduled"], ["Notes", "notes"], ["On hold", "onHold"], ["Hold reason", "holdReason"],
-    ["Inactive", "inactive"], ["Client ID", "id"]
+    ["Ended", "endReason"], ["Ended on", "endedOn"], ["Inactive", "inactive"], ["Client ID", "id"]
   ];
   function csvCell(v) {
     let s = String(v == null ? "" : v);
@@ -494,6 +525,8 @@
     const list = state.clients.slice().sort(cmpName);
     const lines = [CSV_COLS.map(c => c[0]).join(",")].concat(list.map(c => CSV_COLS.map(([, k]) => {
       if (k === "inactive" || k === "onHold") return c[k] ? "Yes" : "";
+      if (k === "endReason") return c.inactive ? statusLabel(statusOf(c)) : "";
+      if (k === "endedOn") return fmt(c.endedOn);
       return csvCell(DATE_FIELDS.includes(k) ? fmt(c[k]) : c[k]);
     }).join(",")));
     const blob = new Blob(["﻿" + lines.join("\r\n") + "\r\n"], { type: "text/csv;charset=utf-8" });
@@ -528,7 +561,7 @@
     lastvisit: "lastVisit", lastsupervisoryvisit: "lastVisit", lastcompletedvisit: "lastVisit", firstvisit: "lastVisit", firstvisitdate: "lastVisit",
     nextdue: "nextDue", duedatefornextvisit: "nextDue", nextvisitdue: "nextDue", duedate: "nextDue",
     scheduledvisit: "scheduled", scheduled: "scheduled", scheduleddate: "scheduled",
-    notes: "notes", onhold: "onHold", holdreason: "holdReason", inactive: "inactive", clientid: "id"
+    notes: "notes", onhold: "onHold", holdreason: "holdReason", ended: "endReason", endedreason: "endReason", status: "endReason", endedon: "endedOn", inactive: "inactive", clientid: "id"
   };
 
   $("#import-input").addEventListener("change", async e => {
@@ -565,6 +598,9 @@
       if (isDate(v.lastVisit) && (!v.nextDue || v.nextDue === addDays(v.lastVisit, CONFIG.intervalDays))) v.nextDue = nextVisit(v.lastVisit);
       ["inactive", "onHold"].forEach(k => { if (k in v) v[k] = /^(yes|y|true|x|1)$/i.test(v[k]); });
       if (v.onHold === false) v.holdReason = "";
+      if ("endReason" in v) v.endReason = /deceas|died|passed/i.test(v.endReason) ? "deceased" : /end|discharg|inactive/i.test(v.endReason) ? "ended" : "";
+      if (v.endReason) v.inactive = true;
+      if ("endedOn" in v) { const d = parseDate(v.endedOn); v.endedOn = d || ""; }
       const existing = (v.id && byId(v.id)) || state.clients.find(c => nameKey(c.first, c.last) === nameKey(v.first, v.last));
       if (existing) {
         Object.keys(v).forEach(k => { if (k !== "id" && (v[k] !== "" || k === "notes" || k === "scheduled")) existing[k] = v[k]; });
@@ -620,7 +656,12 @@
         // An older copy of the sheet script doesn't know about "on hold": keep this browser's.
         if ("onHold" in sc) { rec.onHold = !!sc.onHold; rec.holdSince = String(sc.holdSince || ""); }
         else if (lc) { rec.onHold = lc.onHold; rec.holdReason = lc.holdReason || ""; rec.holdSince = lc.holdSince || ""; }
-        DATE_FIELDS.concat("holdSince").forEach(f => { const d = parseDate(rec[f]); rec[f] = d || ""; });
+        // Same for "ended care" / "deceased" (an older script only has Inactive).
+        if ("endReason" in sc) { rec.endReason = sc.endReason === "deceased" ? "deceased" : sc.endReason ? "ended" : ""; rec.endedOn = String(sc.endedOn || ""); }
+        else if (lc) { rec.endReason = lc.endReason || ""; rec.endedOn = lc.endedOn || ""; }
+        if (rec.endReason) rec.inactive = true;
+        if (!rec.inactive) { rec.endReason = ""; rec.endedOn = ""; }
+        DATE_FIELDS.concat("holdSince", "endedOn").forEach(f => { const d = parseDate(rec[f]); rec[f] = d || ""; });
         if (!rec.nextDue && isDate(rec.lastVisit)) rec.nextDue = nextVisit(rec.lastVisit); // row typed into the sheet
         if (lc) Object.assign(lc, rec); else local.set(sc.id, rec);
       }
@@ -686,7 +727,6 @@
     $("#add-btn").hidden = !open;
     $("#sync-card").classList.toggle("data-card", open);
     $("#sync-title").textContent = open ? "Google Sheet" : "Enter passcode";
-    $(".forget").hidden = !open;
     if (!open) document.querySelectorAll("dialog[open]").forEach(d => d.close());
   }
   function renderSyncCard() {

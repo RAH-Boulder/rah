@@ -11,10 +11,12 @@ over at midnight) it re-checks today's date.
   The page warns if the date is after the due date or on a weekend.
 - **Mark completed** records the date the visit took place, works out the next due date,
   and clears the scheduled date. Every action can be undone from the message that appears.
-- **Put on hold** (on the due list, or tick **On hold** when editing a client) for someone
-  who stays a client but shouldn't be visited for now, e.g. temporary nursing home care.
-  They drop off the due list and counts and appear under **On hold** with the reason.
-  **Take off hold** puts them back; if their visit is past due they show as overdue.
+- **Status dropdown** (on the due list, the On hold list, All clients, and when editing):
+  - **On hold**: still a client but not visited for now, e.g. temporary nursing home care.
+    They drop off the due list and counts and appear under **On hold** with the reason.
+  - **Ended care** / **Deceased**: no longer a client. They drop off every list, and their
+    record is kept with the date (tick **Show ended care & deceased** to see them).
+  - **Active**: back on the lists; if their visit is past due they show as overdue.
 - **All clients**: the full list, searchable and sortable. Click a row to edit.
   **Remove** takes a client off the list completely (you're asked to confirm, and can undo).
 
@@ -33,8 +35,8 @@ Click **+ Add client** and enter the name and the **first visit date**:
 - If it's in the future, it's listed as a scheduled first visit. Click **Mark completed**
   after it happens to start the 90-day count.
 
-Tick **Inactive** (open the client) to keep a former client's record but hide them.
-**Remove** deletes them from the list completely.
+Set the status to **Ended care** or **Deceased** to keep a former client's record but take
+them off the lists. **Remove** deletes them from the list completely.
 
 ## Where the data is kept
 
@@ -46,8 +48,8 @@ address is set in `config.js` as `sheetUrl`.
 and checked by the sheet, the page shows only the passcode box: no client names, counts or
 buttons. Once connected, the browser keeps a copy so the page also works briefly offline.
 
-- **Disconnect this computer** (bottom of the page) erases the list and the passcode from
-  that browser. Use it on shared computers.
+- **Disconnect this computer** (next to Sync now) erases the list and the passcode from
+  that browser.
 - If the passcode is changed in the sheet's script, every connected browser locks itself and
   erases its copy the next time it opens; staff then enter the new passcode.
 

@@ -9,7 +9,7 @@
   <meta name="robots" content="noindex, nofollow">
   <title>Supervisory Visits</title>
   <meta name="theme-color" content="#b5303a">
-  <link rel="stylesheet" href="style.css?v=2">
+  <link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
   <header class="top">
@@ -53,7 +53,7 @@
     <section class="card" id="hold-card" hidden>
       <details open>
         <summary><h2>On hold</h2></summary>
-        <p class="small muted">Clients on hold (for example, in temporary nursing home care) aren't on the due list. Take them off hold when visits should start again.</p>
+        <p class="small muted">Clients on hold (for example, in temporary nursing home care) aren't on the due list. Set their status back to <b>Active</b> when visits should start again.</p>
         <div id="hold-list"></div>
       </details>
     </section>
@@ -69,7 +69,7 @@
     <section class="card" id="all-card">
       <div class="all-head">
         <h2>All clients <span class="muted small" id="all-count"></span></h2>
-        <label class="check small"><input type="checkbox" id="show-inactive"> Show inactive</label>
+        <label class="check small"><input type="checkbox" id="show-inactive"> Show ended care &amp; deceased</label>
       </div>
       <input type="search" id="search" placeholder="Search by name" autocomplete="off" aria-label="Search clients">
       <div class="table-wrap">
@@ -102,20 +102,16 @@
       </form>
       <div id="sync-connected" class="btn-row">
         <button type="button" class="btn small" id="sync-now-btn">Sync now</button>
+        <button type="button" class="link danger" id="forget-btn">Disconnect this computer</button>
       </div>
       <p class="small warn-note" id="weak-note" hidden>Your passcode is short, so it could eventually be guessed. Change it to at least 12 characters (for example four unrelated words) under Apps Script → Project Settings → Script properties, then connect again.</p>
-      <div class="forget">
-        <h3>Using a shared computer?</h3>
-        <p class="small muted">Once connected, anyone who opens this page on this computer can see and change the list. <b>Disconnect this computer</b> erases the list and the passcode from this browser, so the passcode is needed again. Nothing is removed from the Google Sheet.</p>
-        <button type="button" class="btn small ghost" id="forget-btn">Disconnect this computer</button>
-      </div>
     </section>
 
     <section class="card" id="file-card" hidden>
       <h2>Spreadsheet file</h2>
       <p class="small">Download the whole list as a CSV file (opens in Excel or Google Sheets), or import one.
         Importing matches clients by name and updates their dates; anyone new is added.</p>
-      <p class="small muted">Columns: First name, Last name, Last visit, Next due, Scheduled visit, Notes, On hold, Hold reason. Dates like 11/17/2026 or 2026-11-17. A blank Next due is worked out from the last visit.</p>
+      <p class="small muted">Columns: First name, Last name, Last visit, Next due, Scheduled visit, Notes, On hold, Hold reason, Ended (Ended care or Deceased), Ended on. Dates like 11/17/2026 or 2026-11-17. A blank Next due is worked out from the last visit.</p>
       <div class="btn-row">
         <button type="button" class="btn small" id="export-btn">Download CSV</button>
         <label class="btn small ghost file-btn">Import CSV
@@ -143,9 +139,15 @@
         <label>Scheduled visit <input type="date" name="scheduled"></label>
       </div>
       <label>Notes <textarea name="notes" rows="2"></textarea></label>
-      <label class="check" id="ed-hold-wrap"><input type="checkbox" name="onHold"> On hold (keep as a client, but off the due list)</label>
+      <label id="ed-status-wrap">Status
+        <select name="status">
+          <option value="active">Active</option>
+          <option value="hold">On hold (still a client, off the due list)</option>
+          <option value="ended">Ended care (off all lists, record kept)</option>
+          <option value="deceased">Deceased (off all lists, record kept)</option>
+        </select>
+      </label>
       <label id="ed-hold-reason">Reason for hold <input type="text" name="holdReason" placeholder="e.g. Temporary nursing home care" autocomplete="off"></label>
-      <label class="check" id="ed-inactive-wrap"><input type="checkbox" name="inactive"> Inactive (no longer a client — hidden from the lists)</label>
       <div class="dialog-foot">
         <button type="button" class="btn small ghost grey" id="ed-delete" hidden>Remove client</button>
         <span class="spacer"></span>
@@ -212,6 +214,6 @@
   <div id="toast" role="status" aria-live="polite" hidden><span id="toast-msg"></span><button type="button" id="toast-undo" hidden>Undo</button></div>
 
   <script src="config.js?v=4"></script>
-  <script src="app.js?v=6"></script>
+  <script src="app.js?v=7"></script>
 </body>
 </html>

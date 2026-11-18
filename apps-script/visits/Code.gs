@@ -132,7 +132,8 @@ function requireStaff() {
   if (email === owner) return email;
   const sheet = tab(SpreadsheetApp.getActiveSpreadsheet(), STAFF);
   const last = sheet.getLastRow();
-  const emails = last > 1 ? sheet.getRange(2, 1, last - 1, 1).getValues() : [];
+  // Every row of column A, including row 1 in case an email was typed over the heading.
+  const emails = last > 0 ? sheet.getRange(1, 1, last, 1).getValues() : [];
   for (let i = 0; i < emails.length; i++) {
     if (String(emails[i][0] || "").trim().toLowerCase() === email) return email;
   }

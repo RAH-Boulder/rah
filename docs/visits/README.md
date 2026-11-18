@@ -38,17 +38,18 @@ Tick **Inactive** (open the client) to keep a former client's record but hide th
 
 ## Where the data is kept
 
-This repository is public, so **no client data is stored in it**. The list lives in:
+This repository is public, so **no client data is stored in it**. The list lives in a private
+Google Sheet (setup: `apps-script/README.md`, "Supervisory visits sheet"), and its web app
+address is set in `config.js` as `sheetUrl`.
 
-1. **A private Google Sheet** (recommended), so every computer shows the same list.
-   Setup: `apps-script/README.md` ("Supervisory visits sheet"). Then on each computer,
-   scroll to **Google Sheet**, paste the web app URL and passcode, and click **Connect**.
-   (Put the URL in `config.js` as `sheetUrl` to skip pasting it.)
-2. **This browser**: everything is saved on the computer too, so the page works offline.
-   Without the sheet, each computer/browser has its own separate list.
+**The page is locked until a computer connects.** Until the team passcode has been entered
+and checked by the sheet, the page shows only the passcode box: no client names, counts or
+buttons. Once connected, the browser keeps a copy so the page also works briefly offline.
 
-On a shared computer, **Forget this computer** (in the Google Sheet box) erases the list and
-the passcode from that browser; the sheet keeps everything.
+- **Disconnect this computer** (bottom of the page) erases the list and the passcode from
+  that browser. Use it on shared computers.
+- If the passcode is changed in the sheet's script, every connected browser locks itself and
+  erases its copy the next time it opens; staff then enter the new passcode.
 
 **Download CSV** saves the whole list (a good backup). **Import CSV** loads one: clients are
 matched by name and their dates updated; new names are added. Columns: First name, Last

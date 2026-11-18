@@ -178,9 +178,9 @@ added to the end of the tab by themselves.)
 5. **Deploy → New deployment** → gear next to "Select type" → **Web app**. **Execute as:
    Me**, **Who has access: Anyone**. **Deploy**, then **Authorize access** and allow it. (If
    Google says the app isn't verified: **Advanced → Go to … (unsafe)** — it's your script.)
-6. Copy the **Web app URL** (ends in `/exec`). Either put it in `docs/visits/config.js` as
-   `sheetUrl`, or paste it on the page under **Google Sheet**.
-7. Open the page, enter the URL and passcode under **Google Sheet**, click **Connect**.
+6. Copy the **Web app URL** (ends in `/exec`) and put it in `docs/visits/config.js` as
+   `sheetUrl` (the page never shows it).
+7. Open the page, enter the passcode and click **Connect**.
    Then **Import CSV** your starting list once; it's sent to the sheet automatically.
    Other computers only need step 7.
 

@@ -20,12 +20,14 @@
       </div>
       <div class="top-actions">
         <button type="button" class="sync-pill" id="sync-pill" hidden></button>
-        <button type="button" class="btn small" id="add-btn">+ Add client</button>
+        <button type="button" class="btn small" id="add-btn" hidden>+ Add client</button>
       </div>
     </div>
   </header>
 
   <main class="wrap">
+    <!-- Nothing about clients is shown until this computer has connected with the passcode. -->
+    <div id="app-content" hidden>
     <div class="tiles">
       <a class="tile" href="#due-card"><span class="tile-num" id="overdue-count">0</span><span class="tile-label">Overdue</span></a>
       <a class="tile" href="#due-card"><span class="tile-num" id="soon-count">0</span><span class="tile-label" id="soon-label">Due in next 3 weeks</span></a>
@@ -86,15 +88,13 @@
       </div>
       <p class="empty" id="roster-empty" hidden>No clients yet. Click <b>+ Add client</b>, or import a spreadsheet below.</p>
     </section>
+    </div>
 
     <section class="card data-card" id="sync-card">
-      <h2>Google Sheet</h2>
+      <h2 id="sync-title">Google Sheet</h2>
       <p class="small" id="sync-status"></p>
       <form id="sync-form" autocomplete="off">
-        <p class="small muted">Connect once on each computer or phone. The client list then stays the same on all of them and in the sheet.</p>
-        <label id="sync-url-wrap">Web app URL
-          <input type="text" id="sync-url" placeholder="https://script.google.com/macros/s/…/exec" inputmode="url">
-        </label>
+        <p class="small muted">Enter the passcode once on each computer or phone to see the client list. It stays the same on all of them and in the Google Sheet.</p>
         <label>Passcode
           <input type="password" id="sync-key" required autocomplete="current-password">
         </label>
@@ -102,17 +102,16 @@
       </form>
       <div id="sync-connected" class="btn-row">
         <button type="button" class="btn small" id="sync-now-btn">Sync now</button>
-        <button type="button" class="link danger" id="sync-off-btn">Disconnect this device</button>
       </div>
       <p class="small warn-note" id="weak-note" hidden>Your passcode is short, so it could eventually be guessed. Change it to at least 12 characters (for example four unrelated words) under Apps Script → Project Settings → Script properties, then connect again.</p>
       <div class="forget">
         <h3>Using a shared computer?</h3>
-        <p class="small muted">Once connected, anyone who opens this page on this computer can see and change the list. <b>Forget this computer</b> erases the list and the passcode from this browser. Nothing is removed from the Google Sheet.</p>
-        <button type="button" class="btn small ghost" id="forget-btn">Forget this computer</button>
+        <p class="small muted">Once connected, anyone who opens this page on this computer can see and change the list. <b>Disconnect this computer</b> erases the list and the passcode from this browser, so the passcode is needed again. Nothing is removed from the Google Sheet.</p>
+        <button type="button" class="btn small ghost" id="forget-btn">Disconnect this computer</button>
       </div>
     </section>
 
-    <section class="card">
+    <section class="card" id="file-card" hidden>
       <h2>Spreadsheet file</h2>
       <p class="small">Download the whole list as a CSV file (opens in Excel or Google Sheets), or import one.
         Importing matches clients by name and updates their dates; anyone new is added.</p>
@@ -212,7 +211,7 @@
 
   <div id="toast" role="status" aria-live="polite" hidden><span id="toast-msg"></span><button type="button" id="toast-undo" hidden>Undo</button></div>
 
-  <script src="config.js?v=3"></script>
-  <script src="app.js?v=5"></script>
+  <script src="config.js?v=4"></script>
+  <script src="app.js?v=6"></script>
 </body>
 </html>

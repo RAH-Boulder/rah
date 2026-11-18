@@ -18,7 +18,6 @@ over at midnight) it re-checks today's date.
     record is kept with the date (tick **Show ended care & deceased** to see them).
   - **Active**: back on the lists; if their visit is past due they show as overdue.
 - **All clients**: the full list, searchable and sortable. Click a row to edit.
-  **Remove** takes a client off the list completely (you're asked to confirm, and can undo).
 
 ## Due dates
 
@@ -36,7 +35,7 @@ Click **+ Add client** and enter the name and the **first visit date**:
   after it happens to start the 90-day count.
 
 Set the status to **Ended care** or **Deceased** to keep a former client's record but take
-them off the lists. **Remove** deletes them from the list completely.
+them off the lists automatically. There's no separate remove button.
 
 ## Where the data is kept
 

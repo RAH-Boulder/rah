@@ -165,6 +165,109 @@ function onEdit(e) {
   }
 }
 
+// ---------- Moving to a new sheet ----------
+// Adds a "Referral partners" menu to the sheet (runs by itself when the sheet opens).
+function onOpen() {
+  SpreadsheetApp.getUi().createMenu("Referral partners")
+    .addItem("Copy data from old sheet…", "copyFromOldSheet")
+    .addToUi();
+}
+
+/**
+ * Copies the Visits and Partners tabs from an older referral partners sheet into this one.
+ * The old sheet is only read, never changed. Rows are matched by their ID and the newest
+ * copy (by "Updated") is kept, so running it twice never doubles anything. Old rows typed in
+ * without an ID get one made from their contents, so they also match up on a second run.
+ */
+function copyFromOldSheet() {
+  const ui = SpreadsheetApp.getUi();
+  const answer = ui.prompt("Copy data from old sheet",
+    "Paste the link to the OLD referral partners Google Sheet (copy it from the address bar). " +
+    "Its Visits and Partners tabs are copied into this sheet. The old sheet isn't changed, and it's safe to run this again.",
+    ui.ButtonSet.OK_CANCEL);
+  if (answer.getSelectedButton() !== ui.Button.OK) return;
+  const text = answer.getResponseText().trim();
+  const m = text.match(/\/d\/([a-zA-Z0-9_-]{20,})/) || text.match(/^([a-zA-Z0-9_-]{20,})$/);
+  if (!m) { ui.alert("That doesn't look like a Google Sheets link. Open the old sheet and copy the whole address from the address bar."); return; }
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (m[1] === ss.getId()) { ui.alert("That's the link to this sheet. Paste the OLD sheet's link instead."); return; }
+  let old;
+  try { old = SpreadsheetApp.openById(m[1]); }
+  catch (err) { ui.alert("Couldn't open that sheet. Check the link, and that you can open the old sheet with this Google account."); return; }
+
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const lines = [PARTNERS, VISITS].map(function (spec) {
+      const r = copyTab(old, ss, spec);
+      if (!r) return spec.name + ": the old sheet has no " + spec.name + " tab, so nothing to copy.";
+      return spec.name + ": " + r.added + " copied, " + r.updated + " updated, " + r.same + " already here (" + r.total + " in the old sheet).";
+    });
+    ui.alert("Done", lines.join("\n") + "\n\nThe old sheet wasn't changed.", ui.ButtonSet.OK);
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function copyTab(oldSs, ss, spec) {
+  const src = oldSs.getSheetByName(spec.name);
+  if (!src || src.getLastRow() < 1 || src.getLastColumn() < 1) return null;
+  const srcHeaders = src.getRange(1, 1, 1, src.getLastColumn()).getDisplayValues()[0].map(String);
+  const srcRows = src.getLastRow() > 1 ? src.getRange(2, 1, src.getLastRow() - 1, srcHeaders.length).getDisplayValues() : [];
+  const sIdCol = srcHeaders.indexOf(spec.id), sUpdCol = srcHeaders.indexOf("Updated");
+
+  // The newest copy of each old row, by ID. Rows without an ID get one.
+  const newest = {}, order = [];
+  srcRows.forEach(function (row) {
+    if (row.every(function (v) { return v === ""; })) return;
+    let id = sIdCol >= 0 ? row[sIdCol] : "";
+    if (!id) id = (spec === VISITS ? "v-" : "p-") + rowFingerprint(row); // same row, same ID, every run
+    const upd = sUpdCol >= 0 ? row[sUpdCol] : "";
+    if (!(id in newest)) order.push(id);
+    else if (!(String(upd) > String(newest[id].upd))) return;
+    newest[id] = { row: row, upd: upd };
+  });
+
+  const sheet = tab(ss, spec);
+  let headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
+  // Keep any columns you added yourself in the old sheet.
+  const extra = srcHeaders.filter(function (h) { return h && headers.indexOf(h) < 0; });
+  if (extra.length) {
+    sheet.getRange(1, headers.length + 1, 1, extra.length).setValues([extra]).setFontWeight("bold");
+    headers = headers.concat(extra);
+  }
+  const width = headers.length, lastRow = sheet.getLastRow();
+  const rows = lastRow > 1 ? sheet.getRange(2, 1, lastRow - 1, width).getDisplayValues() : [];
+  const idCol = headers.indexOf(spec.id), updCol = headers.indexOf("Updated");
+  const deletedCol = headers.indexOf(spec === VISITS ? "Deleted" : "Removed");
+  const here = {};
+  rows.forEach(function (r, i) { if (r[idCol]) here[r[idCol]] = i; });
+
+  const added = [], changed = {};
+  let same = 0;
+  order.forEach(function (id) {
+    const item = newest[id], i = here[id];
+    if (i !== undefined && !(String(item.upd) > String(rows[i][updCol] || ""))) { same++; return; }
+    const row = i !== undefined ? rows[i].slice() : headers.map(function () { return ""; });
+    srcHeaders.forEach(function (h, j) { const k = headers.indexOf(h); if (h && k >= 0) row[k] = clean(item.row[j]); });
+    row[idCol] = id;
+    if (i !== undefined) { rows[i] = row; changed[i] = true; } else added.push(row);
+  });
+
+  Object.keys(changed).forEach(function (k) {
+    const i = Number(k), range = sheet.getRange(i + 2, 1, 1, width);
+    range.setNumberFormat("@").setValues([rows[i]]);
+    if (deletedCol >= 0 && yes(rows[i][deletedCol])) range.setFontColor("#9aa0a6");
+  });
+  if (added.length) {
+    sheet.getRange(lastRow + 1, 1, added.length, width).setNumberFormat("@").setValues(added);
+    added.forEach(function (row, n) {
+      if (deletedCol >= 0 && yes(row[deletedCol])) sheet.getRange(lastRow + 1 + n, 1, 1, width).setFontColor("#9aa0a6");
+    });
+  }
+  return { added: added.length, updated: Object.keys(changed).length, same: same, total: order.length };
+}
+
 // ---------- helpers ----------
 function tab(ss, spec) {
   let sheet = ss.getSheetByName(spec.name);
@@ -179,6 +282,12 @@ function tab(ss, spec) {
   const missing = spec.headers.filter(function (h) { return have.indexOf(h) < 0; });
   if (missing.length) sheet.getRange(1, have.length + 1, 1, missing.length).setValues([missing]).setFontWeight("bold");
   return sheet;
+}
+
+// A short ID made from a row's contents, for old rows that never got an ID.
+function rowFingerprint(row) {
+  const bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, row.join("\u0001"), Utilities.Charset.UTF_8);
+  return bytes.slice(0, 6).map(function (b) { return ("0" + (b & 255).toString(16)).slice(-2); }).join("");
 }
 
 function rowCells(headers, row) {

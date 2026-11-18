@@ -160,9 +160,9 @@ Sheet, so every computer shows the same client list. It creates one tab, **Clien
 first sync):
 
 First name · Last name · Last visit · Next due · Scheduled visit · Notes · On hold ·
-Hold reason · Hold since · Inactive · Deleted · Client ID · Updated
+Hold reason · Hold since · Ended · Ended on · Inactive · Deleted · Client ID · Updated
 
-(If you set the sheet up before "On hold" was added, paste the new `VisitsSheet.gs` in and
+(If you set the sheet up before "On hold" or "Ended" was added, paste the new `VisitsSheet.gs` in and
 publish a new version — see "If you change the script later" below. The new columns are
 added to the end of the tab by themselves.)
 

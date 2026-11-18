@@ -226,3 +226,9 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
 #hold-card summary h2::before { content: "▸ "; color: var(--muted); }
 #hold-card details[open] summary h2::before { content: "▾ "; }
 #hold-card h2 { margin-bottom: 0; }
+.status-select {
+  width: auto; min-height: 36px; padding: 0 28px 0 10px; font: inherit; font-size: .875rem; font-weight: 600;
+  color: var(--muted); background-color: var(--card); border: 1px solid var(--line); border-radius: 10px; cursor: pointer;
+}
+.status-select:hover { color: var(--accent); border-color: var(--accent); }
+.roster .act-col .status-select { min-height: 32px; vertical-align: middle; }

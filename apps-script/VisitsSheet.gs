@@ -20,13 +20,14 @@ const CLIENTS = {
   name: "Clients",
   id: "Client ID",
   headers: ["First name", "Last name", "Last visit", "Next due", "Scheduled visit", "Notes", "On hold",
-    "Hold reason", "Hold since", "Inactive", "Deleted", "Client ID", "Updated"],
+    "Hold reason", "Hold since", "Ended", "Ended on", "Inactive", "Deleted", "Client ID", "Updated"],
   toCells: function (r) {
     if (r.removed) return { "Client ID": r.id, "Deleted": "Yes", "Updated": r.updated };
     return {
       "First name": r.first, "Last name": r.last, "Last visit": r.lastVisit, "Next due": r.nextDue,
       "Scheduled visit": r.scheduled, "Notes": r.notes, "On hold": r.onHold ? "Yes" : "", "Hold reason": r.holdReason,
-      "Hold since": r.holdSince, "Inactive": r.inactive ? "Yes" : "", "Deleted": "",
+      "Hold since": r.holdSince, "Ended": r.endReason === "deceased" ? "Deceased" : r.endReason ? "Ended care" : "",
+      "Ended on": r.endedOn, "Inactive": r.inactive ? "Yes" : "", "Deleted": "",
       "Client ID": r.id, "Updated": r.updated
     };
   },
@@ -34,13 +35,20 @@ const CLIENTS = {
     return {
       id: c["Client ID"], first: c["First name"], last: c["Last name"], lastVisit: c["Last visit"],
       nextDue: c["Next due"], scheduled: c["Scheduled visit"], notes: c["Notes"], onHold: yes(c["On hold"]),
-      holdReason: c["Hold reason"], holdSince: c["Hold since"], inactive: yes(c["Inactive"]),
+      holdReason: c["Hold reason"], holdSince: c["Hold since"], endReason: endReason(c["Ended"]), endedOn: c["Ended on"],
+      inactive: yes(c["Inactive"]) || !!endReason(c["Ended"]),
       removed: yes(c["Deleted"]), updated: c["Updated"]
     };
   }
 };
 
-const DATE_HEADERS = ["Last visit", "Next due", "Scheduled visit", "Hold since"];
+const DATE_HEADERS = ["Last visit", "Next due", "Scheduled visit", "Hold since", "Ended on"];
+
+// "Ended" column: "Deceased" or "Ended care" (typed by hand, other wording is understood too).
+function endReason(v) {
+  const s = String(v || "");
+  return /deceas|died|passed/i.test(s) ? "deceased" : /end|discharg/i.test(s) ? "ended" : "";
+}
 
 function doPost(e) {
   let data;

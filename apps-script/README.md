@@ -168,54 +168,52 @@ same URL.
 
 ---
 
-# Supervisory visits sheet
+# Supervisory visits (Google-hosted)
 
-`VisitsSheet.gs` syncs the Supervisory Visits page (`docs/visits`) with a private Google
-Sheet, so every computer shows the same client list. It creates one tab, **Clients** (on the
-first sync):
+The Supervisory Visits page runs **inside your Google Workspace** as an Apps Script web app
+attached to the "Supervisory Visits" Google Sheet. Files: `apps-script/visits/Code.gs` and
+`apps-script/visits/Index.html`. (The old page in `docs/visits` now only says it has moved and
+erases the copy the old version kept in browsers.)
 
-First name · Last name · Last visit · Next due · Scheduled visit · Notes · On hold ·
-Hold reason · Hold since · Ended · Ended on · Inactive · Deleted · Client ID · Updated
+- Staff sign in with **their own work Google account**; there is no shared passcode.
+- Only the sheet's owner and people listed in the **Staff** tab can open it. Anyone else in
+  your organization sees "You don't have access", and people outside it can't open it at all.
+- Every view and change is written to the **Audit log** tab: time, who, what, which client,
+  and the before → after values.
+- The client list is read live from the **Clients** tab and saved there straight away. Nothing
+  about clients is stored on staff computers. If two people change the same client at once,
+  the second is told and shown the latest details instead of overwriting.
+- Everything stays in Google Workspace (covered by your BAA); GitHub is not involved.
 
-(If you set the sheet up before "On hold" or "Ended" was added, paste the new `VisitsSheet.gs` in and
-publish a new version — see "If you change the script later" below. The new columns are
-added to the end of the tab by themselves.)
+Tabs: **Clients** (First name · Last name · Last visit · Next due · Scheduled visit · Notes ·
+On hold · Hold reason · Hold since · Ended · Ended on · Inactive · Deleted · Client ID ·
+Updated), **Staff** (Email · Name · Notes) and **Audit log** (Time · User · Action · Client ·
+Client ID · Details).
 
-## Set it up (once, about 5 minutes)
+## Set it up
 
-1. Create a new Google Sheet, e.g. "Supervisory Visits". Keep it private: **Share →
-   General access → Restricted**, and add teammates by email.
-2. Click **Extensions → Apps Script**.
-3. Delete everything in the editor, paste in all of `VisitsSheet.gs`, and click save.
-4. Choose a passcode (at least 12 characters, not used elsewhere). Click the gear (**Project
-   Settings**), scroll to **Script properties**, **Add script property**: Property
-   `PASSCODE`, Value: your passcode. Save.
-5. **Deploy → New deployment** → gear next to "Select type" → **Web app**. **Execute as:
-   Me**, **Who has access: Anyone**. **Deploy**, then **Authorize access** and allow it. (If
-   Google says the app isn't verified: **Advanced → Go to … (unsafe)** — it's your script.)
-6. Copy the **Web app URL** (ends in `/exec`) and put it in `docs/visits/config.js` as
-   `sheetUrl` (the page never shows it).
-7. Open the page, enter the passcode and click **Connect**.
-   Then **Import CSV** your starting list once; it's sent to the sheet automatically.
-   Other computers only need step 7.
+1. Open the Supervisory Visits sheet → **Extensions → Apps Script**.
+2. In **Code.gs**, replace everything with `apps-script/visits/Code.gs`. Save.
+3. Click **+** next to Files → **HTML**, name it `Index` (exactly), replace everything with
+   `apps-script/visits/Index.html`. Save.
+4. **Deploy → New deployment** → **Web app**. **Execute as: Me**. **Who has access: Anyone
+   within [your organization]**. Deploy, authorize, and copy the **Web app URL**.
+5. Open the URL yourself once: the **Staff** tab is created. Add each staff member's work
+   email in the **Email** column.
+6. **Deploy → Manage deployments**: archive the old web app deployment (the one the GitHub
+   page used), and remove the `PASSCODE` script property (Project Settings).
+7. Give staff the new URL (bookmark it). It only works for signed-in staff on the list.
+
+To remove someone's access, delete their row in the Staff tab; it takes effect immediately.
 
 ## Editing in the sheet
 
-You can edit cells or add rows directly. The script fills in **Updated** (and an ID for new
-rows) so your change shows on the page next time it opens. Typing a new **Last visit** also
-fills in **Next due** (90 days later, on the closest weekday). Dates are `2026-11-17`
-(`11/17/2026` typed by hand is understood too). To delete someone put `Yes` in **Deleted**
-(deleting the row outright would bring it back from computers that still have it).
+Keep the sheet itself shared only with yourself (and a backup admin); staff use the page.
+You can edit cells in the Clients tab: **Updated** is filled in for you, and a new **Last
+visit** fills in **Next due**. To delete a client, put `Yes` in **Deleted**. Edits made
+directly in the sheet are in the sheet's version history, not the Audit log.
 
 ## If you change the script later
 
 **Deploy → Manage deployments → edit (pencil) → Version: New version → Deploy** keeps the
 same URL.
-
-## What it can and can't do
-
-Same as the caregiver compliance sheet above: nothing is read or written without the
-passcode, wrong tries are slowed down but you can't be locked out, a connected browser stays
-unlocked until **Forget this computer**, and **File → Version history** in the sheet can
-restore an earlier copy. If two computers edit the same client before syncing, the most
-recent edit wins.

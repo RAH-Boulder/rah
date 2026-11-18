@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="robots" content="noindex, nofollow">
+  <style>
+:root {
+  --bg: #f6f3ee;
+  --card: #ffffff;
+  --ink: #1f2a37;
+  --muted: #5b6573;
+  --line: #e3ddd3;
+  --accent: #b5303a;
+  --accent-ink: #ffffff;
+  --accent-soft: #f8e7e8;
+  --good: #1f7a4d;
+  --good-bg: #e7f4ec;
+  --warn: #8a5a00;
+  --warn-bg: #fdf2dc;
+  --shadow: 0 1px 2px rgba(31, 42, 55, .06), 0 2px 8px rgba(31, 42, 55, .05);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15191f;
+    --card: #1e242c;
+    --ink: #e8ecf1;
+    --muted: #a3adba;
+    --line: #313a45;
+    --accent: #e0606a;
+    --accent-ink: #15191f;
+    --accent-soft: #3a1f22;
+    --good: #6cd19d;
+    --good-bg: #183026;
+    --warn: #f0c060;
+    --warn-bg: #3a2f17;
+    --shadow: none;
+  }
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.wrap { max-width: 760px; margin: 0 auto; padding: 0 16px; }
+h1 { font-size: 1.25rem; margin: 0; }
+h2 { font-size: 1.1rem; margin: 0 0 .25rem; }
+h3 { font-size: .95rem; margin: 1.25rem 0 .5rem; }
+.muted { color: var(--muted); }
+.small { font-size: .875rem; }
+[hidden] { display: none !important; }
+
+/* Header and tabs */
+.top {
+  position: sticky; top: 0; z-index: 5;
+  background: var(--card);
+  border-bottom: 1px solid var(--line);
+  padding-top: env(safe-area-inset-top);
+}
+.top-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 12px; padding-bottom: 8px; }
+
+main { padding-top: 16px; padding-bottom: 48px; }
+
+/* Form controls */
+input[type="text"], input[type="password"], input[type="search"], input[type="date"], input[type="datetime-local"], select, textarea {
+  width: 100%; font: inherit; color: var(--ink); background: var(--card);
+  border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; min-height: 44px;
+}
+textarea { resize: vertical; }
+input:focus, select:focus, textarea:focus, button:focus-visible, a:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 1px;
+}
+label { display: block; font-weight: 600; font-size: .875rem; margin-bottom: 12px; }
+label > input, label > select, label > textarea { margin-top: 4px; font-weight: 400; }
+label.check { display: flex; align-items: center; gap: 8px; font-weight: 500; }
+label.check input { width: 20px; height: 20px; }
+.field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+.field-grid.three { grid-template-columns: 2fr 1fr 1fr; }
+@media (max-width: 480px) { .field-grid, .field-grid.three { grid-template-columns: 1fr; } }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 44px; padding: 0 16px; border-radius: 10px;
+  background: var(--accent); color: var(--accent-ink); border: 1px solid var(--accent);
+  font: inherit; font-weight: 600; text-decoration: none; cursor: pointer; white-space: nowrap;
+}
+.btn.ghost { background: transparent; color: var(--accent); }
+.btn.small { min-height: 36px; padding: 0 12px; font-size: .875rem; }
+.btn.on { background: var(--good-bg); color: var(--good); border-color: var(--good); }
+.btn:disabled { opacity: .5; cursor: default; }
+.link { background: none; border: 0; padding: 4px 0; color: var(--accent); font: inherit; font-size: .875rem; font-weight: 600; cursor: pointer; text-decoration: underline; }
+.link.danger { color: var(--muted); }
+.icon-btn { background: none; border: 0; font-size: 1.1rem; color: var(--muted); width: 44px; height: 44px; cursor: pointer; border-radius: 10px; flex: none; }
+.file-btn { position: relative; overflow: hidden; }
+.file-btn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+/* Cards and lists */
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; box-shadow: var(--shadow); margin-bottom: 16px; }
+.filters { margin-bottom: 8px; }
+.filters > input { margin-bottom: 8px; }
+.filter-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.filter-row label { margin-bottom: 0; }
+.list-actions { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 8px 0 12px; font-size: .875rem; flex-wrap: wrap; }
+
+.empty { text-align: center; color: var(--muted); padding: 32px 16px; }
+
+.data-card { margin-top: 32px; }
+
+/* Dialogs */
+dialog {
+  border: 0; padding: 0; border-radius: 16px; background: var(--card); color: var(--ink);
+  width: min(560px, calc(100vw - 24px)); max-height: calc(100dvh - 24px);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, .25);
+}
+dialog::backdrop { background: rgba(15, 20, 26, .5); }
+.dialog-inner { padding: 16px; }
+.dialog-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 12px; }
+.dialog-head h2 { font-size: 1.2rem; }
+.dialog-foot { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.spacer { flex: 1; }
+.pd-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.pd-actions .btn { flex: 1 1 auto; }
+.pd-notes textarea { font-size: .95rem; }
+.pd-footer { margin: 16px 0 0; }
+
+#toast {
+  position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom)); transform: translateX(-50%);
+  background: var(--ink); color: var(--card); padding: 10px 16px; border-radius: 10px;
+  font-size: .9rem; z-index: 50; max-width: calc(100vw - 32px); box-shadow: 0 4px 16px rgba(0,0,0,.2);
+}
+
+/* Google Sheet sync */
+.top-actions { display: flex; align-items: center; gap: 8px; }
+.sync-pill {
+  border: 0; background: var(--good-bg); color: var(--good); font: inherit; font-size: .75rem; font-weight: 600;
+  border-radius: 999px; padding: 4px 10px; cursor: pointer; white-space: nowrap;
+}
+.sync-pill:not(.ok):not(.bad) { background: var(--accent-soft); color: var(--muted); }
+.sync-pill.bad { background: var(--warn-bg); color: var(--warn); }
+#sync-form .btn { margin-top: 4px; }
+@media (max-width: 420px) { h1 { font-size: 1.05rem; } .top-row .btn.small { padding: 0 10px; } }
+
+
+/* Caregiver compliance */
+.wrap { max-width: 980px; }
+.today { margin: 2px 0 0; }
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.tile {
+  display: flex; flex-direction: column; gap: 2px; text-decoration: none; color: var(--ink);
+  background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 16px; box-shadow: var(--shadow);
+}
+.tile-num { font-size: 1.8rem; font-weight: 700; line-height: 1.1; color: var(--good); }
+.tile.hot .tile-num { color: var(--accent); }
+.tile-label { font-size: .85rem; color: var(--muted); font-weight: 600; }
+.alert-card h2, #missing-card h2 { margin-bottom: 0; }
+.alert-card > .small, #missing-card > .small { margin-top: 2px; }
+.row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); flex-wrap: wrap; }
+.row:first-child { border-top: 0; }
+.row-main { flex: 1 1 260px; min-width: 0; display: flex; flex-direction: column; }
+.row-name { background: none; border: 0; padding: 0; font: inherit; font-weight: 600; color: inherit; cursor: pointer; text-align: left; }
+.row-name:hover { color: var(--accent); text-decoration: underline; }
+.row-what { font-size: .9rem; color: var(--muted); }
+.row-status { font-size: .85rem; font-weight: 600; color: var(--ink); }
+.row-status.soon { color: var(--warn); }
+.row-status.late { color: var(--accent); }
+.row-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.row.compact { padding: 6px 0; }
+.all-clear { margin: 8px 0 0; padding: 10px 12px; border-radius: 10px; background: var(--good-bg); color: var(--good); font-weight: 600; }
+.all-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+.all-head label { margin: 0; }
+.table-wrap { overflow-x: auto; margin: 8px -16px 0; padding: 0 16px; position: relative; }
+.roster { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.roster th { text-align: left; white-space: nowrap; border-bottom: 2px solid var(--line); }
+.roster th button { background: none; border: 0; font: inherit; font-weight: 700; color: var(--muted); padding: 8px 6px; cursor: pointer; }
+.roster th[aria-sort="ascending"] button::after { content: " ▲"; font-size: .7em; }
+.roster th[aria-sort="descending"] button::after { content: " ▼"; font-size: .7em; }
+.roster td { padding: 8px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.roster td.name { font-weight: 600; white-space: normal; min-width: 140px; }
+.roster tbody tr { cursor: pointer; }
+.roster tbody tr:hover, .roster tbody tr:focus { background: var(--accent-soft); outline: none; }
+.roster td.soon { color: var(--warn); font-weight: 600; }
+.roster td.late { color: var(--accent); font-weight: 700; }
+.roster td.none { color: var(--muted); }
+.roster tr.inactive td { color: var(--muted); }
+.tag { font-size: .7rem; font-weight: 600; background: var(--line); color: var(--muted); border-radius: 999px; padding: 1px 6px; }
+.hint { margin: -6px 0 12px; min-height: 1em; }
+.next-due { background: var(--good-bg); color: var(--ink); border-radius: 10px; padding: 10px 12px; }
+.warn-card { border-color: var(--warn); }
+#toast { display: flex; align-items: center; gap: 14px; }
+#toast-undo { background: none; border: 0; color: inherit; font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; padding: 0; }
+.card { scroll-margin-top: 90px; }
+#missing-card summary { cursor: pointer; list-style: none; }
+#missing-card summary::-webkit-details-marker { display: none; }
+#missing-card summary h2::before { content: "▸ "; color: var(--muted); }
+#missing-card details[open] summary h2::before { content: "▾ "; }
+#missing-card details[open] #missing-sum { display: none; }
+.roster td.act-col { text-align: right; padding-top: 4px; padding-bottom: 4px; }
+.roster .act-col .btn { min-height: 32px; }
+.row-btns .link { padding: 0 4px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.btn.grey { color: var(--muted); border-color: var(--line); }
+.btn.grey:hover { color: var(--accent); border-color: var(--accent); }
+.warn-note { background: var(--warn-bg); color: var(--warn); border-radius: 10px; padding: 10px 12px; font-weight: 600; }
+.forget { border-top: 1px solid var(--line); margin-top: 16px; padding-top: 4px; }
+
+/* Supervisory visits */
+.row-sched { font-size: .9rem; }
+.row-sched.none { color: var(--warn); font-weight: 600; }
+.row-sched.ok { color: var(--good); font-weight: 600; }
+.card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.roster td.sched { color: var(--good); font-weight: 600; }
+.warn-text { color: var(--warn); font-weight: 600; }
+@media print {
+  .top-actions, .row-btns, .tiles, #all-card, #missing-card, .data-card, .card:not(#due-card), .card-head .btn { display: none !important; }
+  .top { position: static; }
+  .card { box-shadow: none; border: 0; }
+}
+.btn-row.tight { margin-top: 0; }
+.tag.hold { background: var(--warn-bg); color: var(--warn); }
+#hold-card summary { cursor: pointer; list-style: none; }
+#hold-card summary::-webkit-details-marker { display: none; }
+#hold-card summary h2::before { content: "▸ "; color: var(--muted); }
+#hold-card details[open] summary h2::before { content: "▾ "; }
+#hold-card h2 { margin-bottom: 0; }
+.status-select {
+  width: auto; min-height: 36px; padding: 0 28px 0 10px; font: inherit; font-size: .875rem; font-weight: 600;
+  color: var(--muted); background-color: var(--card); border: 1px solid var(--line); border-radius: 10px; cursor: pointer;
+}
+.status-select:hover { color: var(--accent); border-color: var(--accent); }
+.roster .act-col .status-select { min-height: 32px; vertical-align: middle; }
+
+.signed-in { white-space: nowrap; }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-row">
+      <div>
+        <h1>Supervisory Visits</h1>
+        <p class="small muted today"><span id="today"></span> · <span class="signed-in">Signed in as <?= userEmail ?></span></p>
+      </div>
+      <div class="top-actions">
+        <button type="button" class="sync-pill" id="sync-pill" hidden></button>
+        <button type="button" class="btn small" id="add-btn" hidden>+ Add client</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="card" id="loading"><p class="small" id="loading-msg">Loading the client list…</p></section>
+    <div id="app-content" hidden>
+    <div class="tiles">
+      <a class="tile" href="#due-card"><span class="tile-num" id="overdue-count">0</span><span class="tile-label">Overdue</span></a>
+      <a class="tile" href="#due-card"><span class="tile-num" id="soon-count">0</span><span class="tile-label" id="soon-label">Due in next 3 weeks</span></a>
+      <a class="tile" href="#due-card"><span class="tile-num" id="unsched-count">0</span><span class="tile-label">Not scheduled yet</span></a>
+      <a class="tile" href="#hold-card" hidden><span class="tile-num" id="hold-count">0</span><span class="tile-label">On hold</span></a>
+      <a class="tile" href="#missing-card"><span class="tile-num" id="missing-count">0</span><span class="tile-label">Missing dates</span></a>
+    </div>
+
+    <section class="card alert-card" id="due-card">
+      <div class="card-head">
+        <div>
+          <h2>Visits due</h2>
+          <p class="small muted" id="due-sub"></p>
+        </div>
+        <div class="btn-row tight">
+          <button type="button" class="btn small ghost" id="copy-list-btn">Copy list</button>
+          <button type="button" class="btn small ghost" id="print-btn">Print</button>
+        </div>
+      </div>
+      <div id="due-list"></div>
+    </section>
+
+    <section class="card" id="hold-card" hidden>
+      <details open>
+        <summary><h2>On hold</h2></summary>
+        <p class="small muted">Clients on hold (for example, in temporary nursing home care) aren't on the due list. Set their status back to <b>Active</b> when visits should start again.</p>
+        <div id="hold-list"></div>
+      </details>
+    </section>
+
+    <section class="card" id="missing-card">
+      <details>
+        <summary><h2>Missing dates <span class="muted small" id="missing-sum"></span></h2></summary>
+        <p class="small muted">Active clients with no last visit and no due date. They can't be tracked until a visit date is entered.</p>
+        <div id="missing-list"></div>
+      </details>
+    </section>
+
+    <section class="card" id="all-card">
+      <div class="all-head">
+        <h2>All clients <span class="muted small" id="all-count"></span></h2>
+        <label class="check small"><input type="checkbox" id="show-inactive"> Show ended care &amp; deceased</label>
+      </div>
+      <input type="search" id="search" placeholder="Search by name" autocomplete="off" aria-label="Search clients">
+      <div class="table-wrap">
+        <table class="roster">
+          <thead>
+            <tr>
+              <th><button type="button" data-sort="name">Name</button></th>
+              <th><button type="button" data-sort="lastVisit">Last visit</button></th>
+              <th><button type="button" data-sort="nextDue">Next due</button></th>
+              <th><button type="button" data-sort="scheduled">Scheduled</button></th>
+              <th class="act-col"><span class="sr-only">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody id="roster"></tbody>
+        </table>
+      </div>
+      <p class="empty" id="roster-empty" hidden>No clients yet. Click <b>+ Add client</b> to add one.</p>
+    </section>
+    </div>
+
+
+  </main>
+
+  <!-- Add / edit a client -->
+  <dialog id="edit-dialog" aria-labelledby="ed-title">
+    <form class="dialog-inner" id="edit-form" method="dialog">
+      <div class="dialog-head">
+        <h2 id="ed-title">Add client</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Close">✕</button>
+      </div>
+      <div class="field-grid">
+        <label>First name <input type="text" name="first" required autocomplete="off"></label>
+        <label>Last name <input type="text" name="last" required autocomplete="off"></label>
+      </div>
+      <label><span id="ed-visit-label">First visit date</span> <input type="date" name="lastVisit"></label>
+      <p class="small muted hint" id="ed-hint"></p>
+      <div class="field-grid" id="ed-more-fields">
+        <label>Next visit due <input type="date" name="nextDue"></label>
+        <label>Scheduled visit <input type="date" name="scheduled"></label>
+      </div>
+      <label>Notes <textarea name="notes" rows="2"></textarea></label>
+      <label id="ed-status-wrap">Status
+        <select name="status">
+          <option value="active">Active</option>
+          <option value="hold">On hold (still a client, off the due list)</option>
+          <option value="ended">Ended care (off all lists, record kept)</option>
+          <option value="deceased">Deceased (off all lists, record kept)</option>
+        </select>
+      </label>
+      <label id="ed-hold-reason">Reason for hold <input type="text" name="holdReason" placeholder="e.g. Temporary nursing home care" autocomplete="off"></label>
+      <div class="dialog-foot">
+        <span class="spacer"></span>
+        <button type="button" class="btn ghost" data-close>Cancel</button>
+        <button type="submit" class="btn" value="save">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Enter / change the scheduled visit date -->
+  <dialog id="sched-dialog" aria-labelledby="sd-title">
+    <form class="dialog-inner" id="sched-form" method="dialog">
+      <div class="dialog-head">
+        <h2 id="sd-title">Schedule visit</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Close">✕</button>
+      </div>
+      <p id="sd-info"></p>
+      <label>Scheduled visit date <input type="date" name="date" required></label>
+      <p class="small hint" id="sd-hint"></p>
+      <div class="dialog-foot">
+        <button type="button" class="link danger" id="sd-clear" hidden>Clear scheduled date</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn ghost" data-close>Cancel</button>
+        <button type="submit" class="btn" value="save">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Put a client on hold -->
+  <dialog id="hold-dialog" aria-labelledby="hd-title">
+    <form class="dialog-inner" id="hold-form" method="dialog">
+      <div class="dialog-head">
+        <h2 id="hd-title">Put on hold</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Close">✕</button>
+      </div>
+      <p>They'll stay a client but won't show on the due list until you take them off hold.</p>
+      <label>Reason (optional) <input type="text" name="reason" placeholder="e.g. Temporary nursing home care" autocomplete="off"></label>
+      <div class="dialog-foot">
+        <span class="spacer"></span>
+        <button type="button" class="btn ghost" data-close>Cancel</button>
+        <button type="submit" class="btn" value="save">Put on hold</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Mark a visit completed -->
+  <dialog id="done-dialog" aria-labelledby="dd-title">
+    <form class="dialog-inner" id="done-form" method="dialog">
+      <div class="dialog-head">
+        <h2 id="dd-title">Visit completed</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Close">✕</button>
+      </div>
+      <p id="dd-info"></p>
+      <label>Date of the visit <input type="date" name="completed" required></label>
+      <p class="next-due" id="dd-next"></p>
+      <div class="dialog-foot">
+        <span class="spacer"></span>
+        <button type="button" class="btn ghost" data-close>Cancel</button>
+        <button type="submit" class="btn" value="save">Mark completed</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" role="status" aria-live="polite" hidden><span id="toast-msg"></span><button type="button" id="toast-undo" hidden>Undo</button></div>
+
+
+  <script>
+/* Supervisory visits: when each client's next 90-day supervisory visit is due.
+ * Served by Google Apps Script to signed-in staff. The list is read live from the Google Sheet
+ * and saved there straight away; it is never stored on this computer. All dates are
+ * "YYYY-MM-DD" strings. */
+(function () {
+  "use strict";
+
+  const CONFIG = { intervalDays: 90, dueSoonDays: 21 };
+  const FIELDS = ["first", "last", "lastVisit", "nextDue", "scheduled", "notes", "holdReason"];
+  const DATE_FIELDS = ["lastVisit", "nextDue", "scheduled"];
+
+  // ---------- State ----------
+  // Clients come from the sheet. Only display preferences (sort order, the "show ended" box)
+  // are remembered in this browser; no client data is.
+  const PREFS_KEY = "rah-visits-prefs";
+  function loadPrefs() {
+    let p = null;
+    try { p = JSON.parse(localStorage.getItem(PREFS_KEY)); } catch (e) { /* ignore */ }
+    return Object.assign({ sort: "nextDue", dir: 1, showInactive: false }, p && typeof p === "object" ? p : {});
+  }
+  const state = { clients: [], settings: loadPrefs() };
+  function save() { try { localStorage.setItem(PREFS_KEY, JSON.stringify(state.settings)); } catch (e) { /* ignore */ } }
+  try { localStorage.removeItem("rah-visits-v1"); } catch (e) { /* the old page's saved copy */ }
+  const uid = () => "v-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+  // ---------- Dates ----------
+  const pad = n => String(n).padStart(2, "0");
+  const iso = (y, m, d) => `${y}-${pad(m)}-${pad(d)}`;
+  function today() { const d = new Date(); return iso(d.getFullYear(), d.getMonth() + 1, d.getDate()); }
+  const isDate = s => /^\d{4}-\d{2}-\d{2}$/.test(String(s || ""));
+  const ms = s => { const [y, m, d] = s.split("-").map(Number); return Date.UTC(y, m - 1, d); };
+  const fromMs = t => { const d = new Date(t); return iso(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate()); };
+  const addDays = (s, n) => fromMs(ms(s) + n * 864e5);
+  const daysBetween = (a, b) => Math.round((ms(b) - ms(a)) / 864e5); // b - a
+  const weekday = s => new Date(ms(s)).getUTCDay(); // 0 Sun … 6 Sat
+
+  // Closest weekday: Saturday → Friday before, Sunday → Monday after.
+  function closestWeekday(s) {
+    const w = weekday(s);
+    return w === 6 ? addDays(s, -1) : w === 0 ? addDays(s, 1) : s;
+  }
+  // Next visit: 90 days after the last visit, on the closest weekday.
+  const nextVisit = s => (isDate(s) ? closestWeekday(addDays(s, CONFIG.intervalDays)) : "");
+
+  function fmt(s) { if (!isDate(s)) return ""; const [y, m, d] = s.split("-"); return `${m}/${d}/${y}`; }
+  function fmtLong(s) {
+    if (!isDate(s)) return "";
+    return new Date(ms(s)).toLocaleDateString("en-US", { timeZone: "UTC", weekday: "short", month: "short", day: "numeric", year: "numeric" });
+  }
+  function fmtShort(s) {
+    if (!isDate(s)) return "";
+    return new Date(ms(s)).toLocaleDateString("en-US", { timeZone: "UTC", weekday: "short", month: "short", day: "numeric" });
+  }
+  // Dates from the sheet: 2026-11-17, 11/17/2026, 11/17/26, 11-17-2026.
+  function parseDate(v) {
+    const s = String(v == null ? "" : v).trim();
+    if (!s) return "";
+    let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (m) return valid(+m[1], +m[2], +m[3]);
+    m = s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2}|\d{4})$/);
+    if (m) return valid(m[3].length === 2 ? 2000 + +m[3] : +m[3], +m[1], +m[2]);
+    return null; // not a date
+  }
+  function valid(y, m, d) {
+    const t = new Date(Date.UTC(y, m - 1, d));
+    return t.getUTCFullYear() === y && t.getUTCMonth() === m - 1 && t.getUTCDate() === d ? iso(y, m, d) : null;
+  }
+
+  // ---------- Helpers ----------
+  const $ = sel => document.querySelector(sel);
+  const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const fullName = c => `${c.first || ""} ${c.last || ""}`.trim();
+  const nameKey = (f, l) => `${f || ""} ${l || ""}`.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z]+/g, " ").trim();
+  const byId = id => state.clients.find(c => c.id === id);
+  const active = () => state.clients.filter(c => !c.inactive);
+  const tracked = () => active().filter(c => !c.onHold); // on hold: off the due list
+
+  // Status: Active, On hold (still a client, off the due list), or Ended care / Deceased
+  // (no longer a client: off every list, record kept).
+  const STATUS = [["active", "Active"], ["hold", "On hold"], ["ended", "Ended care"], ["deceased", "Deceased"]];
+  const statusLabel = k => (STATUS.find(x => x[0] === k) || STATUS[0])[1];
+  const statusOf = c => (c.inactive ? (c.endReason === "deceased" ? "deceased" : "ended") : c.onHold ? "hold" : "active");
+  function statusSelect(c) {
+    const cur = statusOf(c);
+    return `<select class="status-select" data-status="${esc(c.id)}" aria-label="Status for ${esc(fullName(c))}">${STATUS.map(([k, l]) =>
+      `<option value="${k}"${k === cur ? " selected" : ""}>${l}</option>`).join("")}</select>`;
+  }
+  const cmpName = (a, b) => (a.last || "").localeCompare(b.last || "") || (a.first || "").localeCompare(b.first || "");
+  const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
+
+  let toastTimer = null, undoFn = null;
+  function toast(msg, undo) {
+    $("#toast-msg").textContent = msg;
+    undoFn = undo || null;
+    $("#toast-undo").hidden = !undo;
+    $("#toast").hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { $("#toast").hidden = true; undoFn = null; }, undo ? 8000 : 3500);
+  }
+  $("#toast-undo").addEventListener("click", () => { if (undoFn) undoFn(); $("#toast").hidden = true; undoFn = null; });
+
+  // ---------- Lists ----------
+  // Due list: overdue, due within dueSoonDays, or with a visit scheduled within dueSoonDays.
+  function dueRows() {
+    const t = today(), lim = CONFIG.dueSoonDays;
+    return tracked().filter(c => (isDate(c.nextDue) && daysBetween(t, c.nextDue) <= lim) || (isDate(c.scheduled) && daysBetween(t, c.scheduled) <= lim))
+      .map(c => ({ c, key: c.nextDue || c.scheduled, days: isDate(c.nextDue) ? daysBetween(t, c.nextDue) : null }))
+      .sort((a, b) => a.key.localeCompare(b.key) || cmpName(a.c, b.c));
+  }
+  function missingRows() {
+    return tracked().filter(c => !isDate(c.lastVisit) && !isDate(c.nextDue) && !isDate(c.scheduled)).sort(cmpName);
+  }
+
+  function dueStatus(days) {
+    if (days == null) return { cls: "", text: "First visit" };
+    if (days < 0) return { cls: "late", text: `Overdue by ${plural(-days, "day")}` };
+    if (days === 0) return { cls: "late", text: "Due today" };
+    if (days === 1) return { cls: "soon", text: "Due tomorrow" };
+    return { cls: days <= 7 ? "soon" : "", text: `Due in ${days} days` };
+  }
+  function schedText(c) {
+    if (!isDate(c.scheduled)) return { cls: "none", text: "Not scheduled yet" };
+    const n = daysBetween(today(), c.scheduled);
+    if (n < 0) return { cls: "none", text: `Was scheduled for ${fmtShort(c.scheduled)} — mark it completed, or enter a new date` };
+    const when = n === 0 ? "today" : n === 1 ? "tomorrow" : fmtShort(c.scheduled);
+    if (isDate(c.nextDue) && c.scheduled > c.nextDue) return { cls: "none", text: `Scheduled ${when} — after the due date` };
+    return { cls: "ok", text: `Scheduled ${when}` };
+  }
+
+  function renderDue() {
+    const rows = dueRows(), by = addDays(today(), CONFIG.dueSoonDays);
+    const overdue = rows.filter(r => r.days != null && r.days < 0).length;
+    const unsched = rows.filter(r => !isDate(r.c.scheduled) || r.c.scheduled < today()).length;
+    $("#overdue-count").textContent = overdue;
+    $("#overdue-count").parentElement.classList.toggle("hot", overdue > 0);
+    $("#soon-count").textContent = rows.length - overdue;
+    $("#soon-label").textContent = `Due in next ${CONFIG.dueSoonDays % 7 ? CONFIG.dueSoonDays + " days" : plural(CONFIG.dueSoonDays / 7, "week")}`;
+    $("#unsched-count").textContent = unsched;
+    $("#unsched-count").parentElement.classList.toggle("hot", unsched > 0);
+    $("#due-sub").textContent = `Overdue, or due in the next ${CONFIG.dueSoonDays} days (by ${fmtLong(by)}). Each visit is due ${CONFIG.intervalDays} days after the last one, on the closest weekday.`;
+    $("#copy-list-btn").hidden = $("#print-btn").hidden = !rows.length;
+    $("#due-list").innerHTML = rows.length ? rows.map(r => {
+      const st = dueStatus(r.days), sc = schedText(r.c), id = esc(r.c.id);
+      const has = isDate(r.c.scheduled) && r.c.scheduled >= today();
+      return `<div class="row">
+        <div class="row-main">
+          <button type="button" class="row-name" data-edit="${id}">${esc(fullName(r.c))}</button>
+          <span class="row-what">${isDate(r.c.nextDue) ? `Due ${fmtLong(r.c.nextDue)}` : "First visit"}${isDate(r.c.lastVisit) ? ` · last visit ${fmt(r.c.lastVisit)}` : ""}</span>
+          <span class="row-status ${st.cls}">${st.text}</span>
+          <span class="row-sched ${sc.cls}">${esc(sc.text)}</span>
+        </div>
+        <div class="row-btns">
+          <button type="button" class="btn small${has ? " ghost" : ""}" data-sched="${id}">${isDate(r.c.scheduled) ? "Change scheduled date" : "Enter scheduled date"}</button>
+          <button type="button" class="btn small${has ? "" : " ghost"}" data-done="${id}">Mark completed</button>
+          ${statusSelect(r.c)}
+        </div>
+      </div>`;
+    }).join("") : `<p class="all-clear">✓ No supervisory visits are overdue or due in the next ${CONFIG.dueSoonDays} days.</p>`;
+  }
+
+  function renderMissing() {
+    const rows = missingRows();
+    $("#missing-count").textContent = rows.length;
+    $("#missing-sum").textContent = `(${rows.length}) — click to show`;
+    $("#missing-card").hidden = !rows.length;
+    $("#missing-count").parentElement.hidden = !rows.length;
+    $("#missing-list").innerHTML = rows.map(c => `<div class="row compact">
+      <div class="row-main"><button type="button" class="row-name" data-edit="${esc(c.id)}" data-focus="lastVisit">${esc(fullName(c))}</button>
+      <span class="row-what">No visit dates</span></div>
+      <div class="row-btns"><button type="button" class="btn small ghost" data-edit="${esc(c.id)}" data-focus="lastVisit">Add last visit</button></div>
+    </div>`).join("");
+  }
+
+  function renderHold() {
+    const rows = active().filter(c => c.onHold).sort(cmpName);
+    $("#hold-card").hidden = !rows.length;
+    $("#hold-count").textContent = rows.length;
+    $("#hold-count").parentElement.hidden = !rows.length;
+    $("#hold-list").innerHTML = rows.map(c => {
+      const n = isDate(c.nextDue) ? daysBetween(today(), c.nextDue) : null;
+      const due = isDate(c.nextDue) ? `${n < 0 ? "Was due" : "Due"} ${fmtLong(c.nextDue)}` : "No due date";
+      return `<div class="row compact">
+        <div class="row-main"><button type="button" class="row-name" data-edit="${esc(c.id)}">${esc(fullName(c))}</button>
+        <span class="row-what">${esc(c.holdReason || "On hold")}${c.holdSince ? ` · since ${fmt(c.holdSince)}` : ""}</span>
+        <span class="row-what">${due}${isDate(c.lastVisit) ? ` · last visit ${fmt(c.lastVisit)}` : ""}</span></div>
+        <div class="row-btns">${statusSelect(c)}</div>
+      </div>`;
+    }).join("");
+  }
+
+  function cellDate(s, cls) {
+    if (!isDate(s)) return `<td class="none">—</td>`;
+    return `<td class="${cls || ""}">${fmt(s)}</td>`;
+  }
+  function renderRoster() {
+    const q = nameKey($("#search").value, "");
+    const list = state.clients.filter(c => (state.settings.showInactive || !c.inactive) && (!q || nameKey(c.first, c.last).includes(q)));
+    const k = state.settings.sort, dir = state.settings.dir;
+    list.sort((a, b) => {
+      if (k === "name") return dir * cmpName(a, b);
+      const av = a[k] || "", bv = b[k] || "";
+      if (!av !== !bv) return av ? -1 : 1; // blanks last
+      return dir * av.localeCompare(bv) || cmpName(a, b);
+    });
+    document.querySelectorAll("[data-sort]").forEach(b => {
+      b.parentElement.setAttribute("aria-sort", b.dataset.sort === k ? (dir > 0 ? "ascending" : "descending") : "none");
+    });
+    const t = today();
+    $("#all-count").textContent = `${active().length} active`;
+    $("#roster").innerHTML = list.map(c => {
+      const n = isDate(c.nextDue) ? daysBetween(t, c.nextDue) : null;
+      const dueCls = n == null || c.onHold ? "" : n < 0 ? "late" : n <= CONFIG.dueSoonDays ? "soon" : "";
+      const schedCls = isDate(c.scheduled) && c.scheduled >= t ? "sched" : "";
+      return `<tr data-edit="${esc(c.id)}" class="${c.inactive ? "inactive" : ""}" tabindex="0">
+        <td class="name">${esc(fullName(c))}${c.inactive ? ` <span class="tag">${statusLabel(statusOf(c)).toLowerCase()}${c.endedOn ? " " + fmt(c.endedOn) : ""}</span>` : c.onHold ? ' <span class="tag hold">on hold</span>' : ""}</td>
+        ${cellDate(c.lastVisit)}${cellDate(c.nextDue, dueCls)}${cellDate(c.scheduled, schedCls)}
+        <td class="act-col">${c.inactive ? "" : `<button type="button" class="btn small ghost grey" data-sched="${esc(c.id)}">Schedule</button>
+          <button type="button" class="btn small ghost grey" data-done="${esc(c.id)}">Completed</button>`}
+          ${statusSelect(c)}</td>
+      </tr>`;
+    }).join("");
+    $("#roster-empty").hidden = state.clients.length > 0;
+  }
+
+  let renderedDay = "";
+  function renderAll() {
+    renderedDay = today();
+    $("#today").textContent = "Today: " + fmtLong(renderedDay);
+    renderDue(); renderHold(); renderMissing(); renderRoster();
+  }
+
+  // ---------- Clicks ----------
+  document.addEventListener("click", e => {
+    if (e.target.closest("select")) return; // the status dropdown (inside a clickable row)
+    const t = e.target.closest("[data-edit],[data-done],[data-sched],[data-sort],[data-close]");
+    if (!t) return;
+    if (t.dataset.close !== undefined) { t.closest("dialog").close(); return; }
+    if (t.dataset.sort) {
+      if (state.settings.sort === t.dataset.sort) state.settings.dir *= -1; else { state.settings.sort = t.dataset.sort; state.settings.dir = 1; }
+      save(); renderRoster(); return;
+    }
+    if (t.dataset.done) { openDone(t.dataset.done); return; }
+    if (t.dataset.sched) { openSched(t.dataset.sched); return; }
+    if (t.dataset.edit) openEdit(t.dataset.edit, t.dataset.focus);
+  });
+  document.addEventListener("change", e => {
+    const sel = e.target.closest("select[data-status]");
+    if (!sel) return;
+    const c = byId(sel.dataset.status), st = sel.value;
+    if (!c) return;
+    if (st === "hold") { openHold(c.id); return; }
+    if ((st === "ended" || st === "deceased") && !confirm(`Mark ${fullName(c)} as ${statusLabel(st).toLowerCase()}? They'll come off the visit lists. Their record is kept (tick "Show ended care & deceased" under All clients to see it).`)) { renderAll(); return; }
+    setStatus(c.id, st);
+  });
+  $("#roster").addEventListener("keydown", e => {
+    const tr = e.target.closest("tr[data-edit]");
+    if (tr && e.target === tr && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); openEdit(tr.dataset.edit); }
+  });
+  $("#search").addEventListener("input", renderRoster);
+  $("#show-inactive").checked = !!state.settings.showInactive;
+  $("#show-inactive").addEventListener("change", e => { state.settings.showInactive = e.target.checked; save(); renderRoster(); });
+  $("#add-btn").addEventListener("click", () => openEdit(null));
+  document.querySelector('a[href="#hold-card"]').addEventListener("click", () => { $("#hold-card details").open = true; });
+  document.querySelector('a[href="#missing-card"]').addEventListener("click", () => { $("#missing-card details").open = true; });
+
+  // Copy the due list as plain text, to paste into an email or message.
+  $("#copy-list-btn").addEventListener("click", async () => {
+    const rows = dueRows();
+    const lines = [`Supervisory visits due by ${fmt(addDays(today(), CONFIG.dueSoonDays))} (as of ${fmt(today())}):`];
+    rows.forEach(r => {
+      const st = dueStatus(r.days).text.toLowerCase();
+      const due = isDate(r.c.nextDue) ? `due ${fmt(r.c.nextDue)} (${st})` : "first visit";
+      const sc = isDate(r.c.scheduled) ? `scheduled ${fmt(r.c.scheduled)}` : "not scheduled yet";
+      lines.push(`- ${fullName(r.c)}: ${due}, ${sc}`);
+    });
+    const text = lines.join("\n");
+    logEvent("Copied the due list", `${rows.length} clients`);
+    try { await navigator.clipboard.writeText(text); toast("List copied — paste it into an email or message."); }
+    catch (err) { window.prompt("Copy this list:", text); }
+  });
+  $("#print-btn").addEventListener("click", () => { logEvent("Printed the due list", `${dueRows().length} clients`); window.print(); });
+
+  // ---------- Add / edit ----------
+  const ed = $("#edit-dialog"), edForm = $("#edit-form");
+  let editingId = null, visitAtOpen = "";
+  function openEdit(id, focus) {
+    const c = id ? byId(id) : null;
+    editingId = c ? c.id : null;
+    edForm.reset();
+    $("#ed-title").textContent = c ? fullName(c) : "Add client";
+    $("#ed-visit-label").textContent = c ? "Last completed visit" : "First visit date";
+    FIELDS.forEach(f => { edForm.elements[f].value = c ? (c[f] || "") : ""; });
+    $("#ed-more-fields").hidden = !c;
+    edForm.elements.lastVisit.required = !c;
+    $("#ed-status-wrap").hidden = !c;
+    edForm.elements.status.value = c ? statusOf(c) : "active";
+    holdReasonShown();
+    visitAtOpen = c ? c.lastVisit || "" : "";
+    lastVisitSeen = visitAtOpen;
+    edHint();
+    ed.showModal();
+    const el = edForm.elements[focus || (c ? "" : "first")];
+    if (el) { el.focus(); if (el.select) try { el.select(); } catch (e) { /* date inputs */ } }
+  }
+  // While the due date is still the one worked out from the last visit (or blank), changing
+  // the last visit moves it too.
+  let lastVisitSeen = "";
+  edForm.elements.lastVisit.addEventListener("change", () => {
+    const due = edForm.elements.nextDue, v = edForm.elements.lastVisit.value;
+    if (editingId && (!due.value || due.value === nextVisit(lastVisitSeen) || due.value === nextVisit(visitAtOpen))) due.value = nextVisit(v);
+    lastVisitSeen = v;
+    edHint();
+  });
+  edForm.elements.nextDue.addEventListener("change", edHint);
+  function holdReasonShown() { $("#ed-hold-reason").hidden = edForm.elements.status.value !== "hold"; }
+  edForm.elements.status.addEventListener("change", holdReasonShown);
+  function edHint() {
+    const v = edForm.elements.lastVisit.value, due = edForm.elements.nextDue.value;
+    let msg = "";
+    if (!editingId) {
+      if (!isDate(v)) msg = `Enter the date of the first visit. Each next visit is due ${CONFIG.intervalDays} days after the last one.`;
+      else if (v > today()) msg = `This visit hasn't happened yet, so it will be listed as scheduled for ${fmtLong(v)}. Click Mark completed after the visit to start the ${CONFIG.intervalDays}-day count.`;
+      else msg = `Next visit will be due ${fmtLong(nextVisit(v))} (${CONFIG.intervalDays} days later, on the closest weekday).`;
+    } else if (isDate(v) && !isDate(due)) msg = `Next visit would be due ${fmtLong(nextVisit(v))}.`;
+    else if (isDate(due) && weekday(due) % 6 === 0) msg = "Note: this due date is on a weekend.";
+    else if (isDate(v) && due === nextVisit(v)) msg = `Next due is ${CONFIG.intervalDays} days after this visit, on the closest weekday.`;
+    $("#ed-hint").textContent = msg;
+  }
+
+  edForm.addEventListener("submit", e => {
+    e.preventDefault();
+    const v = {};
+    FIELDS.forEach(f => { v[f] = edForm.elements[f].value.trim(); });
+    if (!v.first || !v.last) return;
+    if (!editingId) {
+      if (!isDate(v.lastVisit)) return;
+      if (v.lastVisit > today()) { v.scheduled = v.nextDue = v.lastVisit; v.lastVisit = ""; }
+      else { v.nextDue = nextVisit(v.lastVisit); v.scheduled = ""; }
+    } else if (!v.nextDue && isDate(v.lastVisit)) v.nextDue = nextVisit(v.lastVisit);
+    const prev = editingId ? byId(editingId) : null;
+    Object.assign(v, statusFields(editingId ? edForm.elements.status.value : "active", v.holdReason, prev));
+    const dup = state.clients.find(c => c.id !== editingId && nameKey(c.first, c.last) === nameKey(v.first, v.last));
+    if (dup && !confirm(`${fullName(dup)} is already on the list. Save anyway?`)) return;
+    let c;
+    if (editingId) {
+      c = Object.assign(byId(editingId), v);
+      toast(`Saved ${v.first} ${v.last}.`);
+    } else {
+      c = Object.assign({ id: uid(), updated: "" }, v);
+      state.clients.push(c);
+      toast(`Added ${v.first} ${v.last}.` + (v.lastVisit ? ` Next visit due ${fmt(v.nextDue)}.` : ` First visit scheduled ${fmt(v.scheduled)}.`));
+    }
+    persist(c, editingId ? "Edited client" : "Added client"); ed.close(); renderAll();
+  });
+
+
+  // ---------- Scheduled visit ----------
+  const sd = $("#sched-dialog"), sdForm = $("#sched-form");
+  let schedId = null;
+  function openSched(id) {
+    const c = byId(id);
+    if (!c) return;
+    schedId = id;
+    $("#sd-title").textContent = fullName(c);
+    $("#sd-info").textContent = isDate(c.nextDue) ? `Next visit is due ${fmtLong(c.nextDue)}.` : "First visit.";
+    sdForm.elements.date.value = c.scheduled || "";
+    $("#sd-clear").hidden = !c.scheduled;
+    sdHint();
+    sd.showModal();
+    sdForm.elements.date.focus();
+  }
+  function sdHint() {
+    const c = byId(schedId), d = sdForm.elements.date.value;
+    let msg = "";
+    if (c && isDate(d)) {
+      if (weekday(d) % 6 === 0) msg = "Note: this is on a weekend. ";
+      if (isDate(c.nextDue) && d > c.nextDue) msg += `This is ${plural(daysBetween(c.nextDue, d), "day")} after the due date.`;
+      else if (d < today()) msg += "This date is in the past. If the visit already happened, use Mark completed instead.";
+    }
+    $("#sd-hint").textContent = msg;
+    $("#sd-hint").classList.toggle("warn-text", !!msg);
+  }
+  sdForm.elements.date.addEventListener("input", sdHint);
+  sdForm.addEventListener("submit", e => {
+    e.preventDefault();
+    const c = byId(schedId), d = sdForm.elements.date.value;
+    if (!c || !isDate(d)) return;
+    const before = c.scheduled || "";
+    c.scheduled = d;
+    persist(c, "Scheduled visit"); sd.close(); renderAll();
+    toast(`${fullName(c)}: visit scheduled ${fmt(d)}.`, () => { c.scheduled = before; persist(c, "Undid scheduled visit"); renderAll(); });
+  });
+  $("#sd-clear").addEventListener("click", () => {
+    const c = byId(schedId);
+    if (!c) return;
+    const before = c.scheduled;
+    c.scheduled = "";
+    persist(c, "Cleared scheduled visit"); sd.close(); renderAll();
+    toast(`${fullName(c)}: scheduled date cleared.`, () => { c.scheduled = before; persist(c, "Undid clearing scheduled visit"); renderAll(); });
+  });
+
+  // ---------- On hold ----------
+  const hd = $("#hold-dialog"), hdForm = $("#hold-form");
+  let holdId = null;
+  function openHold(id) {
+    const c = byId(id);
+    if (!c) return;
+    holdId = id;
+    $("#hd-title").textContent = fullName(c);
+    hdForm.elements.reason.value = c.holdReason || "";
+    hd.showModal();
+    hdForm.elements.reason.focus();
+  }
+  hdForm.addEventListener("submit", e => {
+    e.preventDefault();
+    const id = holdId;
+    holdId = null;
+    hd.close();
+    setStatus(id, "hold", hdForm.elements.reason.value.trim());
+  });
+  hd.addEventListener("close", () => { if (holdId) { holdId = null; renderAll(); } }); // cancelled: reset the dropdown
+
+  // The fields that go with each status. `prev` keeps the start date when nothing changed.
+  function statusFields(st, reason, prev) {
+    const was = prev ? statusOf(prev) : "active";
+    const f = { onHold: false, holdReason: "", holdSince: "", inactive: false, endReason: "", endedOn: "" };
+    if (st === "hold") Object.assign(f, { onHold: true, holdReason: reason || "", holdSince: (was === "hold" && prev.holdSince) || today() });
+    if (st === "ended" || st === "deceased") Object.assign(f, { inactive: true, endReason: st, endedOn: (was === st && prev.endedOn) || today() });
+    return f;
+  }
+  function setStatus(id, st, reason) {
+    const c = byId(id);
+    if (!c) return;
+    const was = statusOf(c);
+    const before = { onHold: !!c.onHold, holdReason: c.holdReason || "", holdSince: c.holdSince || "", inactive: !!c.inactive, endReason: c.endReason || "", endedOn: c.endedOn || "" };
+    Object.assign(c, statusFields(st, reason, c));
+    persist(c, `Status: ${statusLabel(st)}`); renderAll();
+    let msg;
+    if (st === "hold") msg = `${fullName(c)} is on hold and off the due list.`;
+    else if (st === "ended") msg = `${fullName(c)}: care ended. They're off the visit lists.`;
+    else if (st === "deceased") msg = `${fullName(c)} is marked deceased and is off the visit lists.`;
+    else {
+      msg = was === "hold" ? `${fullName(c)} is off hold.` : `${fullName(c)} is an active client again.`;
+      if (isDate(c.nextDue) && daysBetween(today(), c.nextDue) < 0) msg += ` Their visit was due ${fmt(c.nextDue)}, so they're on the overdue list.`;
+    }
+    toast(msg, () => { Object.assign(c, before); persist(c, `Undid status change (back to ${statusLabel(was)})`); renderAll(); });
+  }
+
+  // ---------- Visit completed ----------
+  const dd = $("#done-dialog"), ddForm = $("#done-form");
+  let doneId = null;
+  function openDone(id) {
+    const c = byId(id);
+    if (!c) return;
+    doneId = id;
+    $("#dd-title").textContent = fullName(c);
+    const parts = [];
+    if (isDate(c.nextDue)) parts.push(`Due ${fmtLong(c.nextDue)}.`);
+    if (isDate(c.scheduled)) parts.push(`Scheduled ${fmtLong(c.scheduled)}.`);
+    $("#dd-info").textContent = parts.join(" ") || "Enter the date the visit took place.";
+    ddForm.elements.completed.value = isDate(c.scheduled) && c.scheduled <= today() ? c.scheduled : today();
+    ddNext();
+    dd.showModal();
+  }
+  function ddNext() {
+    const d = ddForm.elements.completed.value;
+    $("#dd-next").innerHTML = isDate(d)
+      ? `Next visit will be due <b>${esc(fmtLong(nextVisit(d)))}</b> (${CONFIG.intervalDays} days after this visit, on the closest weekday).`
+      : "Enter the date the visit took place.";
+  }
+  ddForm.elements.completed.addEventListener("input", ddNext);
+  ddForm.addEventListener("submit", e => {
+    e.preventDefault();
+    const c = byId(doneId), when = ddForm.elements.completed.value;
+    if (!c || !isDate(when)) return;
+    if (when > today() && !confirm(`${fmt(when)} is in the future. Mark the visit completed anyway?`)) return;
+    const before = { lastVisit: c.lastVisit, nextDue: c.nextDue, scheduled: c.scheduled };
+    c.lastVisit = when;
+    c.nextDue = nextVisit(when);
+    c.scheduled = "";
+    persist(c, "Marked visit completed"); dd.close(); renderAll();
+    toast(`${fullName(c)}: next visit due ${fmt(c.nextDue)}.`, () => {
+      Object.assign(c, before); persist(c, "Undid visit completed"); renderAll();
+    });
+  });
+
+  // ---------- Talking to the Google Sheet ----------
+  // google.script.run calls the functions in Code.gs, as the signed-in staff member.
+  function call(fn, ...args) {
+    return new Promise((resolve, reject) => {
+      google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[fn](...args);
+    });
+  }
+  const errText = err => String((err && err.message) || err || "unknown error").replace(/^Exception:\s*/, "");
+
+  // Saves run one at a time, so a quick change and its Undo arrive in order.
+  let queue = Promise.resolve(), pending = 0;
+  function persist(c, action) {
+    pending++; setPill("saving");
+    queue = queue.then(() => call("saveClient", Object.assign({}, c), action).then(res => {
+      if (res.conflict) {
+        Object.assign(c, normalize(res.client));
+        toast(`${fullName(c)} was just changed by someone else, so their latest details are shown. Please make your change again.`);
+      } else {
+        Object.assign(c, normalize(res.client));
+      }
+    }).catch(err => {
+      toast(`Couldn't save (${errText(err)}). The list has been reloaded; please try again.`);
+      pending = 0; load(false);
+    }).finally(() => {
+      pending = Math.max(0, pending - 1);
+      setPill(pending ? "saving" : "ok");
+      if (!document.querySelector("dialog[open]")) renderAll();
+    }));
+  }
+  function logEvent(action, details) { call("logEvent", action, details).catch(() => {}); }
+
+  function normalize(sc) {
+    const rec = { id: String(sc.id || ""), updated: String(sc.updated || ""), onHold: !!sc.onHold, inactive: !!sc.inactive };
+    FIELDS.concat("holdSince", "endedOn").forEach(f => { rec[f] = String(sc[f] || ""); });
+    DATE_FIELDS.concat("holdSince", "endedOn").forEach(f => { rec[f] = parseDate(rec[f]) || ""; });
+    rec.endReason = sc.endReason === "deceased" ? "deceased" : sc.endReason ? "ended" : "";
+    if (rec.endReason) rec.inactive = true;
+    if (!rec.inactive) { rec.endReason = ""; rec.endedOn = ""; }
+    if (!rec.nextDue && isDate(rec.lastVisit)) rec.nextDue = nextVisit(rec.lastVisit);
+    return rec;
+  }
+
+  let loadedAt = 0;
+  function load(opened) {
+    setPill("loading");
+    return call("getClients", !!opened).then(res => {
+      state.clients = (res.clients || []).filter(c => c && c.id && (c.first || c.last)).map(normalize);
+      loadedAt = Date.now();
+      $("#loading").hidden = true;
+      $("#app-content").hidden = false;
+      $("#add-btn").hidden = false;
+      setPill("ok");
+      if (!document.querySelector("dialog[open]")) renderAll();
+    }).catch(err => {
+      setPill("bad");
+      $("#loading-msg").textContent = `Couldn't load the client list (${errText(err)}). Reload the page to try again.`;
+    });
+  }
+
+  function setPill(st) {
+    const el = $("#sync-pill");
+    const map = { ok: ["✓ Saved", "ok"], saving: ["Saving…", ""], loading: ["Loading…", ""], bad: ["Not saved", "bad"] };
+    const [txt, cls] = map[st] || map.ok;
+    el.hidden = false; el.textContent = txt; el.className = "sync-pill " + cls;
+  }
+
+  // ---------- Keep the lists current ----------
+  // Coming back to the page reloads the list (so changes by others show up), and the lists
+  // roll over by themselves at midnight if the page is left open.
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState !== "visible" || document.querySelector("dialog[open]")) return;
+    if (!pending && Date.now() - loadedAt > 60000) load(false);
+    else if (today() !== renderedDay) renderAll();
+  });
+  setInterval(() => {
+    if (document.querySelector("dialog[open]")) return;
+    if (!pending && document.visibilityState === "visible" && Date.now() - loadedAt > 5 * 60000) load(false);
+    else if (today() !== renderedDay) renderAll();
+  }, 60000);
+
+  load(true);
+})();
+
+  </script>
+</body>
+</html>

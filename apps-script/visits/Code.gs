@@ -45,10 +45,14 @@ const TEXT_FIELDS = ["first", "last", "lastVisit", "nextDue", "scheduled", "note
 function doGet() {
   let user;
   try { user = requireStaff(); } catch (err) {
+    // Say which account Google reports, so a mismatch (or no account at all) is easy to spot.
+    const seen = String(Session.getActiveUser().getEmail() || "").trim();
+    const who = seen
+      ? "<p>You're signed in as <b>" + escapeHtml(seen) + "</b>. Ask the office to add exactly this email to the Staff tab, then reload this page.</p>"
+      : "<p>Google didn't tell this page which account you're signed in with. Open the link while signed in to only your work Google account (an incognito window works), then reload.</p>";
     return HtmlService.createHtmlOutput(
       '<div style="font:16px/1.5 system-ui,sans-serif;max-width:520px;margin:48px auto;padding:0 16px">' +
-      "<h1 style=\"font-size:1.25rem\">Supervisory Visits</h1><p>You don't have access to this page.</p>" +
-      "<p>Ask the office to add your work email to the staff list, then reload this page.</p></div>")
+      "<h1 style=\"font-size:1.25rem\">Supervisory Visits</h1><p>You don't have access to this page.</p>" + who + "</div>")
       .setTitle("Supervisory Visits")
       .addMetaTag("viewport", "width=device-width, initial-scale=1");
   }
@@ -265,6 +269,10 @@ function normDate(s) {
   if (!m) return s;
   const y = m[3].length === 2 ? "20" + m[3] : m[3];
   return y + "-" + ("0" + m[1]).slice(-2) + "-" + ("0" + m[2]).slice(-2);
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; });
 }
 
 function yes(v) { return /^(yes|y|true|x|✓)$/i.test(String(v || "").trim()); }

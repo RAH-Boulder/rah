@@ -35,7 +35,10 @@
   }
   let state = loadState();
   // save(true) = your data changed, so send it to the Google Sheet soon.
+  let erased = false; // set while erasing this device, so nothing writes the data back
   function save(changed) {
+    if (erased) return;
+    if (changed) state.settings.changeSeq = (state.settings.changeSeq || 0) + 1; // counts changes not yet in the sheet
     try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
     catch (e) { toast("Couldn't save — your browser storage may be full or turned off."); }
     if (changed) scheduleSync();
@@ -938,6 +941,7 @@
     if (syncing) { syncAgain = true; return; }
     if (!navigator.onLine) { syncError = "offline"; setSyncPill("offline"); return; }
     syncing = true; setSyncPill("syncing");
+    const seqAtStart = state.settings.changeSeq || 0;
     try {
       const res = await fetch(syncUrl(), {
         method: "POST", redirect: "follow",
@@ -953,6 +957,7 @@
       }
       applyServer(j); // edits made here while waiting are newer, so they survive the merge
       state.settings.lastSync = stamp(); syncError = "";
+      state.settings.syncedSeq = seqAtStart; // every change up to here is in the sheet
       save();
       if (manual) toast("Synced with Google Sheet.");
       if (!document.querySelector("dialog[open]")) refreshAll();
@@ -1009,9 +1014,46 @@
   });
   $("#sync-now-btn").addEventListener("click", () => syncNow(true));
   $("#sync-off-btn").addEventListener("click", () => {
-    if (!confirm("Stop syncing this device? Your data stays here and in the sheet.")) return;
+    if (!confirm("Stop syncing this device? Your data stays here and in the sheet.\n\nTo also remove it from this device, use \"Erase data from this device\" instead.")) return;
     delete state.settings.syncKey; save(); setSyncPill(); renderSyncCard();
   });
+  // ---------- Erase this device ----------
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const hasUnsynced = () => (state.settings.changeSeq || 0) > (state.settings.syncedSeq || 0);
+  $("#erase-btn").addEventListener("click", async () => {
+    const btn = $("#erase-btn");
+    btn.disabled = true;
+    try {
+      if (syncOn()) { // send the latest changes to the sheet first
+        btn.textContent = "Syncing first…";
+        for (let i = 0; i < 150 && syncing; i++) await sleep(200);
+        await syncNow();
+        for (let i = 0; i < 150 && syncing; i++) await sleep(200);
+      }
+      let msg;
+      if (syncOn() && !hasUnsynced()) {
+        msg = "Erase all visits, notes and settings from this device?\n\nEverything is safe in the Google Sheet. To use the site here again, you'll need the passcode.";
+      } else if (syncOn()) {
+        msg = "Some changes on this device haven't reached the Google Sheet (it couldn't be reached). Erasing now loses them for good.\n\nErase anyway?";
+      } else if (state.visits.length || Object.keys(state.notes).length) {
+        msg = `This device isn't connected to the Google Sheet, so its ${state.visits.length} visit${state.visits.length === 1 ? "" : "s"} and notes exist only here. Download a backup first if you need them.\n\nErase everything from this device?`;
+      } else {
+        msg = "Erase all data and settings from this device?";
+      }
+      if (!confirm(msg)) return;
+      erased = true;
+      clearTimeout(syncTimer);
+      try { localStorage.removeItem(STORE_KEY); localStorage.removeItem(GEO_KEY); } catch (e) { /* ignore */ }
+      location.replace(location.pathname + "?erased");
+    } finally {
+      if (!erased) { btn.disabled = false; btn.textContent = "Erase data from this device"; }
+    }
+  });
+  if (/[?&]erased\b/.test(location.search)) {
+    history.replaceState(null, "", location.pathname);
+    setTimeout(() => toast("All data was erased from this device."), 300);
+  }
+
   $("#sync-pill").addEventListener("click", () => { showTab("visits"); $("#sync-card").scrollIntoView({ behavior: "smooth" }); });
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible" && syncOn()) {

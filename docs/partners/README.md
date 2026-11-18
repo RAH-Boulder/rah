@@ -23,6 +23,10 @@ partners sheet"). The badge next to **+ Add partner** shows whether this device 
 
 The script's URL is in `config.js`. Keep the Google Sheet itself private (Share → General access → Restricted); the site doesn't need the sheet to be shared.
 
+**Visits → Erase data from this device** removes all visits, notes, the route and the passcode
+from that device (for shared computers or a lost/replaced phone). It syncs first, and warns
+if any changes haven't reached the sheet.
+
 **Visits → Download backup** saves a file copy; **Restore backup** loads it (and sends it
 to the sheet if connected).
 

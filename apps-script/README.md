@@ -65,6 +65,22 @@ everyone else's back. The sheet gets two tabs (created on the first sync):
 7. On each phone or computer: open the site, go to **Visits → Google Sheet**, enter the
    passcode and tap **Connect**. The first sync fills the Partners tab with your list.
 
+## Moving to a new sheet
+
+1. Set up the new sheet with the steps above (paste `PartnersSheet.gs`, add `PASSCODE`, deploy).
+   Using the same passcode as before means devices reconnect without asking.
+2. Reload the new sheet. A **Referral partners** menu appears at the top. Click
+   **Referral partners → Copy data from old sheet…**, paste the old sheet's link, and click
+   **OK**. The first time, Google asks you to allow the script to read your sheets; allow it.
+3. It copies the old **Visits** and **Partners** tabs (including deleted rows and any columns
+   you added) and tells you how many rows it copied. The old sheet isn't changed. Rows are
+   matched by ID, so running it again only adds what's new, never duplicates.
+4. Put the new web app URL in `docs/partners/config.js` as `sheetUrl`. Each device then sends
+   anything it has that wasn't in the old sheet.
+5. A day later, run the copy once more to catch any last changes made to the old sheet, then
+   turn the old script off: in the old sheet, **Extensions → Apps Script → Deploy → Manage
+   deployments → Archive**. Keep the old sheet as a backup.
+
 ## Editing in the sheet
 
 You can edit cells or add rows in the sheet. The script fills in **Updated** (and an ID

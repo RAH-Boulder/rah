@@ -2,7 +2,7 @@
 window.PARTNERS_CONFIG = {
   // The Apps Script web app URL (ends in /exec). Leave empty and the site asks for it
   // on each device instead.
-  sheetUrl: "https://script.google.com/macros/s/AKfycby8cv8vB8CARRFsw9j2sZERWTDGgzbY0eSkTbpwhkeja74n6n4trrg9nznAXSKdYeCH/exec",
+  sheetUrl: "https://script.google.com/macros/s/AKfycbwBh323RgX21iut5WcNGeA-EE8oiDYdfV3_UPjARNe4QTvBP2pALFP5H-eVfbbCOz6JzA/exec",
   // Optional link to the sheet for an "Open the sheet" button. Left empty on purpose: this file
   // is public, and the sheet should stay private (Share > General access > Restricted).
   sheetLink: "",

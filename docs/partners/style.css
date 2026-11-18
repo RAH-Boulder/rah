@@ -9,6 +9,7 @@
   --accent-soft: #f8e7e8;
   --good: #1f7a4d;
   --good-bg: #e7f4ec;
+  --bad: #a3262f;
   --warn: #8a5a00;
   --warn-bg: #fdf2dc;
   --shadow: 0 1px 2px rgba(31, 42, 55, .06), 0 2px 8px rgba(31, 42, 55, .05);
@@ -25,6 +26,7 @@
     --accent-soft: #3a1f22;
     --good: #6cd19d;
     --good-bg: #183026;
+    --bad: #f08a90;
     --warn: #f0c060;
     --warn-bg: #3a2f17;
     --shadow: none;
@@ -71,7 +73,7 @@ h3 { font-size: .95rem; margin: 1.25rem 0 .5rem; }
 main { padding-top: 16px; padding-bottom: 48px; }
 
 /* Form controls */
-input[type="text"], input[type="search"], input[type="date"], input[type="datetime-local"], select, textarea {
+input[type="text"], input[type="search"], input[type="password"], input[type="date"], input[type="datetime-local"], select, textarea {
   width: 100%; font: inherit; color: var(--ink); background: var(--card);
   border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; min-height: 44px;
 }
@@ -99,6 +101,7 @@ label.check input { width: 20px; height: 20px; }
 .btn:disabled { opacity: .5; cursor: default; }
 .link { background: none; border: 0; padding: 4px 0; color: var(--accent); font: inherit; font-size: .875rem; font-weight: 600; cursor: pointer; text-decoration: underline; }
 .link.danger { color: var(--muted); }
+.btn.danger { background: transparent; color: var(--bad); border-color: currentColor; }
 .icon-btn { background: none; border: 0; font-size: 1.1rem; color: var(--muted); width: 44px; height: 44px; cursor: pointer; border-radius: 10px; flex: none; }
 .file-btn { position: relative; overflow: hidden; }
 .file-btn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }

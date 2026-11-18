@@ -57,7 +57,7 @@
     if (!isDate(s)) return "";
     return new Date(ms(s)).toLocaleDateString("en-US", { timeZone: "UTC", weekday: "short", month: "short", day: "numeric" });
   }
-  // Typed or imported dates: 2026-11-17, 11/17/2026, 11/17/26, 11-17-2026.
+  // Dates from the sheet: 2026-11-17, 11/17/2026, 11/17/26, 11-17-2026.
   function parseDate(v) {
     const s = String(v == null ? "" : v).trim();
     if (!s) return "";
@@ -510,85 +510,6 @@
     });
   });
 
-  // ---------- CSV ----------
-  function parseCsv(text) {
-    const rows = []; let row = [], cell = "", q = false;
-    text = text.replace(/^﻿/, "");
-    for (let i = 0; i < text.length; i++) {
-      const ch = text[i];
-      if (q) {
-        if (ch === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; }
-        else cell += ch;
-      } else if (ch === '"') q = true;
-      else if (ch === ",") { row.push(cell); cell = ""; }
-      else if (ch === "\n" || ch === "\r") {
-        if (ch === "\r" && text[i + 1] === "\n") i++;
-        row.push(cell); rows.push(row); row = []; cell = "";
-      } else cell += ch;
-    }
-    if (cell || row.length) { row.push(cell); rows.push(row); }
-    return rows.filter(r => r.some(c => c.trim()));
-  }
-  const headKey = h => String(h).toLowerCase().replace(/[^a-z]/g, "");
-  const HEAD_ALIASES = {
-    firstname: "first", first: "first", lastname: "last", last: "last",
-    lastvisit: "lastVisit", lastsupervisoryvisit: "lastVisit", lastcompletedvisit: "lastVisit", firstvisit: "lastVisit", firstvisitdate: "lastVisit",
-    nextdue: "nextDue", duedatefornextvisit: "nextDue", nextvisitdue: "nextDue", duedate: "nextDue",
-    scheduledvisit: "scheduled", scheduled: "scheduled", scheduleddate: "scheduled",
-    notes: "notes", onhold: "onHold", holdreason: "holdReason", ended: "endReason", endedreason: "endReason", status: "endReason", endedon: "endedOn", inactive: "inactive", clientid: "id"
-  };
-
-  $("#import-input").addEventListener("change", async e => {
-    const file = e.target.files[0];
-    e.target.value = "";
-    if (!file) return;
-    let rows;
-    try { rows = parseCsv(await file.text()); } catch (err) { toast("Couldn't read that file."); return; }
-    const hi = rows.findIndex(r => r.some(c => HEAD_ALIASES[headKey(c)] === "first"));
-    if (hi < 0) { toast('No "First name" column found in that file.'); return; }
-    const map = rows[hi].map(h => HEAD_ALIASES[headKey(h)] || null);
-    let added = 0, updated = 0;
-    const skipped = [], now = stamp();
-    rows.slice(hi + 1).forEach((r, n) => {
-      const v = {};
-      map.forEach((k, j) => { if (k) v[k] = String(r[j] == null ? "" : r[j]).trim().replace(/^'(?=[=+\-@])/, ""); });
-      if (!v.first && !v.last) return;
-      const bad = [];
-      DATE_FIELDS.forEach(k => {
-        if (!(k in v)) return;
-        const d = parseDate(v[k]);
-        if (d === null) { bad.push(v[k]); delete v[k]; } else v[k] = d;
-      });
-      if (bad.length) skipped.push(`row ${hi + n + 2} (${bad.join(", ")})`);
-      // A visit date in the future with no Next due hasn't happened yet: treat it as a scheduled
-      // first visit, the same as + Add client does. (With a Next due, both are kept as given.)
-      if (isDate(v.lastVisit) && v.lastVisit > today() && !isDate(v.nextDue)) {
-        if (!isDate(v.scheduled)) v.scheduled = v.lastVisit;
-        v.nextDue = v.lastVisit;
-        v.lastVisit = "";
-      }
-      // A blank due date, or one that is exactly 90 days after the last visit without the
-      // weekday adjustment (as in the old spreadsheet), is worked out here.
-      if (isDate(v.lastVisit) && (!v.nextDue || v.nextDue === addDays(v.lastVisit, CONFIG.intervalDays))) v.nextDue = nextVisit(v.lastVisit);
-      ["inactive", "onHold"].forEach(k => { if (k in v) v[k] = /^(yes|y|true|x|1)$/i.test(v[k]); });
-      if (v.onHold === false) v.holdReason = "";
-      if ("endReason" in v) v.endReason = /deceas|died|passed/i.test(v.endReason) ? "deceased" : /end|discharg|inactive/i.test(v.endReason) ? "ended" : "";
-      if (v.endReason) v.inactive = true;
-      if ("endedOn" in v) { const d = parseDate(v.endedOn); v.endedOn = d || ""; }
-      const existing = (v.id && byId(v.id)) || state.clients.find(c => nameKey(c.first, c.last) === nameKey(v.first, v.last));
-      if (existing) {
-        Object.keys(v).forEach(k => { if (k !== "id" && (v[k] !== "" || k === "notes" || k === "scheduled")) existing[k] = v[k]; });
-        existing.updated = now; updated++;
-      } else {
-        const id = v.id && !state.removed[v.id] ? v.id : uid();
-        state.clients.push(Object.assign({ first: "", last: "", lastVisit: "", nextDue: "", scheduled: "", notes: "", holdReason: "" }, v, { id, updated: now }));
-        added++;
-      }
-    });
-    save(true); renderAll();
-    toast(`Imported: ${added} added, ${updated} updated.` + (skipped.length ? ` Dates not understood in ${skipped.slice(0, 3).join("; ")}${skipped.length > 3 ? "…" : ""}.` : ""));
-  });
-
   // ---------- Google Sheet sync ----------
   // Every device sends all its records; the sheet keeps the newest copy of each (by `updated`)
   // and sends everything back.
@@ -697,7 +618,6 @@
   function applyLock() {
     const open = unlocked();
     $("#app-content").hidden = !open;
-    $("#file-card").hidden = !open;
     $("#add-btn").hidden = !open;
     $("#sync-card").classList.toggle("data-card", open);
     $("#sync-title").textContent = open ? "Google Sheet" : "Enter passcode";

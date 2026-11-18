@@ -68,7 +68,7 @@ function doGet() {
 function getClients(opened) {
   const user = requireStaff();
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  tab(ss, STAFF); // so the Staff tab is there to fill in
+  staffSheet(ss); // so the Staff tab is there to fill in
   const clients = readClients(ss).list.filter(function (r) { return r.id && !r.removed; });
   if (opened) audit(ss, user, "Opened the list", "", "", clients.length + " clients");
   return { user: user, clients: clients };
@@ -128,16 +128,62 @@ function logEvent(action, details) {
 function requireStaff() {
   const email = String(Session.getActiveUser().getEmail() || "").trim().toLowerCase();
   if (!email) throw new Error("Not signed in.");
-  const owner = String(Session.getEffectiveUser().getEmail() || "").trim().toLowerCase();
-  if (email === owner) return email;
-  const sheet = tab(SpreadsheetApp.getActiveSpreadsheet(), STAFF);
-  const last = sheet.getLastRow();
-  // Every row of column A, including row 1 in case an email was typed over the heading.
-  const emails = last > 0 ? sheet.getRange(1, 1, last, 1).getValues() : [];
-  for (let i = 0; i < emails.length; i++) {
-    if (String(emails[i][0] || "").trim().toLowerCase() === email) return email;
-  }
+  if (ownerEmails().indexOf(email) >= 0) return email;
+  if (staffEmails().indexOf(email) >= 0) return email;
   throw new Error("No access.");
+}
+
+// The person the script runs as, and the owner of the spreadsheet, always have access.
+function ownerEmails() {
+  const out = [];
+  try { out.push(Session.getEffectiveUser().getEmail()); } catch (e) { /* not available */ }
+  try { const o = SpreadsheetApp.getActiveSpreadsheet().getOwner(); if (o) out.push(o.getEmail()); } catch (e) { /* not available */ }
+  return out.map(function (x) { return String(x || "").trim().toLowerCase(); }).filter(String);
+}
+
+// The Staff tab (found even if its name has different capitals or extra spaces).
+function staffSheet(ss) {
+  const found = ss.getSheets().filter(function (sh) { return sh.getName().trim().toLowerCase() === STAFF.name.toLowerCase(); })[0];
+  return found || tab(ss, STAFF);
+}
+
+/**
+ * Every email in column A of the Staff tab. Emails are picked out of whatever is in the cell, so
+ * a person chip, a mailto: link, a name with the email, or stray spaces all still work.
+ */
+function staffEmails() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) throw new Error("This script isn't attached to a spreadsheet.");
+  const sheet = staffSheet(ss);
+  const last = sheet.getLastRow();
+  if (!last) return [];
+  const range = sheet.getRange(1, 1, last, 1);
+  const texts = [];
+  const values = range.getValues(), shown = range.getDisplayValues();
+  let links = [];
+  try { links = range.getRichTextValues(); } catch (e) { /* not available */ }
+  for (let i = 0; i < last; i++) {
+    texts.push(String(values[i][0] || ""), String(shown[i][0] || ""));
+    try { const rt = links[i] && links[i][0]; if (rt && rt.getLinkUrl()) texts.push(rt.getLinkUrl()); } catch (e) { /* no link */ }
+  }
+  const out = [];
+  texts.join(" ").replace(/[A-Z0-9._%+'-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, function (m) { out.push(m.toLowerCase()); return m; });
+  return out;
+}
+
+/**
+ * Run this from the Apps Script editor (choose "checkSetup" next to Run, then click Run) and
+ * look at the Execution log. It shows which spreadsheet the script is attached to and what it
+ * reads from the Staff tab. Nothing is changed.
+ */
+function checkSetup() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) { console.log("PROBLEM: this script is not attached to a spreadsheet. Open Apps Script from the sheet (Extensions → Apps Script)."); return; }
+  console.log("Attached to spreadsheet: " + ss.getName() + " — " + ss.getUrl());
+  console.log("Tabs: " + ss.getSheets().map(function (sh) { return '"' + sh.getName() + '"'; }).join(", "));
+  console.log("Always allowed (script runs as / sheet owner): " + (ownerEmails().join(", ") || "(none found)"));
+  const emails = staffEmails();
+  console.log("Emails found in the Staff tab: " + (emails.join(", ") || "(none)"));
 }
 
 // ---------- Audit log ----------

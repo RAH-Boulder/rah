@@ -53,7 +53,8 @@ buttons. Once connected, the browser keeps a copy so the page also works briefly
 - If the passcode is changed in the sheet's script, every connected browser locks itself and
   erases its copy the next time it opens; staff then enter the new passcode.
 
-**Download CSV** saves the whole list (a good backup). **Import CSV** loads one: clients are
+There's no download button, so the list can't be saved to a file from the page (the Google
+Sheet, with its version history, is the backup). **Import CSV** loads a file: clients are
 matched by name and their dates updated; new names are added. Columns: First name, Last
 name, Last visit, Next due, Scheduled visit, Notes (the old spreadsheet's "Last Supervisory
 Visit" and "Due Date for Next Visit" headings work too). A blank Next due is worked out from

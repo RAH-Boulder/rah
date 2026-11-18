@@ -108,12 +108,10 @@
     </section>
 
     <section class="card" id="file-card" hidden>
-      <h2>Spreadsheet file</h2>
-      <p class="small">Download the whole list as a CSV file (opens in Excel or Google Sheets), or import one.
-        Importing matches clients by name and updates their dates; anyone new is added.</p>
+      <h2>Import clients</h2>
+      <p class="small">Import a CSV file (from Excel or Google Sheets). Clients are matched by name and their dates updated; anyone new is added.</p>
       <p class="small muted">Columns: First name, Last name, Last visit, Next due, Scheduled visit, Notes, On hold, Hold reason, Ended (Ended care or Deceased), Ended on. Dates like 11/17/2026 or 2026-11-17. A blank Next due is worked out from the last visit.</p>
       <div class="btn-row">
-        <button type="button" class="btn small" id="export-btn">Download CSV</button>
         <label class="btn small ghost file-btn">Import CSV
           <input type="file" id="import-input" accept=".csv,text/csv">
         </label>
@@ -214,6 +212,6 @@
   <div id="toast" role="status" aria-live="polite" hidden><span id="toast-msg"></span><button type="button" id="toast-undo" hidden>Undo</button></div>
 
   <script src="config.js?v=4"></script>
-  <script src="app.js?v=7"></script>
+  <script src="app.js?v=8"></script>
 </body>
 </html>

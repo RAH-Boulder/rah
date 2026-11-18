@@ -3,7 +3,7 @@ window.CAREGIVERS_CONFIG = {
   // The Apps Script web app URL (ends in /exec) for the private Google Sheet that holds the
   // caregiver list. Leave empty and the page asks for it on each computer instead.
   // Setup: apps-script/README.md ("Caregiver compliance sheet").
-  sheetUrl: "https://script.google.com/macros/s/AKfycbz94eEcYaTz2W2AezCEiFCB8wHVEjPfG3fL002eG6Aywlsau6Qu7eiD3_oOED9Zw6zC/exec",
+  sheetUrl: "https://script.google.com/macros/s/AKfycbxmZyT5Ea9ynf8CCWWX7Y5LiLko84JZSX89uTTL4Gk9z-o4LguPo9MKgc_Rtbfixuty/exec",
 
   // Show licenses and insurances that have expired or expire within this many days.
   expiringDays: 10,

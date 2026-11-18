@@ -511,32 +511,6 @@
   });
 
   // ---------- CSV ----------
-  const CSV_COLS = [
-    ["First name", "first"], ["Last name", "last"], ["Last visit", "lastVisit"], ["Next due", "nextDue"],
-    ["Scheduled visit", "scheduled"], ["Notes", "notes"], ["On hold", "onHold"], ["Hold reason", "holdReason"],
-    ["Ended", "endReason"], ["Ended on", "endedOn"], ["Inactive", "inactive"], ["Client ID", "id"]
-  ];
-  function csvCell(v) {
-    let s = String(v == null ? "" : v);
-    if (/^[=+\-@]/.test(s)) s = "'" + s; // never run as a formula in Excel
-    return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-  }
-  $("#export-btn").addEventListener("click", () => {
-    const list = state.clients.slice().sort(cmpName);
-    const lines = [CSV_COLS.map(c => c[0]).join(",")].concat(list.map(c => CSV_COLS.map(([, k]) => {
-      if (k === "inactive" || k === "onHold") return c[k] ? "Yes" : "";
-      if (k === "endReason") return c.inactive ? statusLabel(statusOf(c)) : "";
-      if (k === "endedOn") return fmt(c.endedOn);
-      return csvCell(DATE_FIELDS.includes(k) ? fmt(c[k]) : c[k]);
-    }).join(",")));
-    const blob = new Blob(["﻿" + lines.join("\r\n") + "\r\n"], { type: "text/csv;charset=utf-8" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `Supervisory visits ${today()}.csv`;
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  });
-
   function parseCsv(text) {
     const rows = []; let row = [], cell = "", q = false;
     text = text.replace(/^﻿/, "");

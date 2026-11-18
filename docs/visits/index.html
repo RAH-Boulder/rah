@@ -86,7 +86,7 @@
           <tbody id="roster"></tbody>
         </table>
       </div>
-      <p class="empty" id="roster-empty" hidden>No clients yet. Click <b>+ Add client</b>, or import a spreadsheet below.</p>
+      <p class="empty" id="roster-empty" hidden>No clients yet. Click <b>+ Add client</b> to add one.</p>
     </section>
     </div>
 
@@ -107,16 +107,6 @@
       <p class="small warn-note" id="weak-note" hidden>Your passcode is short, so it could eventually be guessed. Change it to at least 12 characters (for example four unrelated words) under Apps Script → Project Settings → Script properties, then connect again.</p>
     </section>
 
-    <section class="card" id="file-card" hidden>
-      <h2>Import clients</h2>
-      <p class="small">Import a CSV file (from Excel or Google Sheets). Clients are matched by name and their dates updated; anyone new is added.</p>
-      <p class="small muted">Columns: First name, Last name, Last visit, Next due, Scheduled visit, Notes, On hold, Hold reason, Ended (Ended care or Deceased), Ended on. Dates like 11/17/2026 or 2026-11-17. A blank Next due is worked out from the last visit.</p>
-      <div class="btn-row">
-        <label class="btn small ghost file-btn">Import CSV
-          <input type="file" id="import-input" accept=".csv,text/csv">
-        </label>
-      </div>
-    </section>
   </main>
 
   <!-- Add / edit a client -->
@@ -212,6 +202,6 @@
   <div id="toast" role="status" aria-live="polite" hidden><span id="toast-msg"></span><button type="button" id="toast-undo" hidden>Undo</button></div>
 
   <script src="config.js?v=4"></script>
-  <script src="app.js?v=8"></script>
+  <script src="app.js?v=9"></script>
 </body>
 </html>

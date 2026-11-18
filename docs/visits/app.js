@@ -222,8 +222,7 @@
         ${cellDate(c.lastVisit)}${cellDate(c.nextDue, dueCls)}${cellDate(c.scheduled, schedCls)}
         <td class="act-col">${c.inactive ? "" : `<button type="button" class="btn small ghost grey" data-sched="${esc(c.id)}">Schedule</button>
           <button type="button" class="btn small ghost grey" data-done="${esc(c.id)}">Completed</button>`}
-          ${statusSelect(c)}
-          <button type="button" class="btn small ghost grey" data-remove="${esc(c.id)}">Remove</button></td>
+          ${statusSelect(c)}</td>
       </tr>`;
     }).join("");
     $("#roster-empty").hidden = state.clients.length > 0;
@@ -243,7 +242,7 @@
   // ---------- Clicks ----------
   document.addEventListener("click", e => {
     if (e.target.closest("select")) return; // the status dropdown (inside a clickable row)
-    const t = e.target.closest("[data-edit],[data-done],[data-sched],[data-remove],[data-sort],[data-close]");
+    const t = e.target.closest("[data-edit],[data-done],[data-sched],[data-sort],[data-close]");
     if (!t) return;
     if (t.dataset.close !== undefined) { t.closest("dialog").close(); return; }
     if (t.dataset.sort) {
@@ -252,7 +251,6 @@
     }
     if (t.dataset.done) { openDone(t.dataset.done); return; }
     if (t.dataset.sched) { openSched(t.dataset.sched); return; }
-    if (t.dataset.remove) { removeClient(t.dataset.remove); return; }
     if (t.dataset.edit) openEdit(t.dataset.edit, t.dataset.focus);
   });
   document.addEventListener("change", e => {
@@ -300,7 +298,6 @@
     edForm.reset();
     $("#ed-title").textContent = c ? fullName(c) : "Add client";
     $("#ed-visit-label").textContent = c ? "Last completed visit" : "First visit date";
-    $("#ed-delete").hidden = !c;
     FIELDS.forEach(f => { edForm.elements[f].value = c ? (c[f] || "") : ""; });
     $("#ed-more-fields").hidden = !c;
     edForm.elements.lastVisit.required = !c;
@@ -363,21 +360,6 @@
     save(true); ed.close(); renderAll();
   });
 
-  $("#ed-delete").addEventListener("click", () => { if (removeClient(editingId)) ed.close(); });
-  function removeClient(id) {
-    const c = byId(id);
-    if (!c) return false;
-    if (!confirm(`Remove ${fullName(c)} from the client list?`)) return false;
-    state.clients = state.clients.filter(x => x.id !== c.id);
-    state.removed[c.id] = stamp();
-    save(true); renderAll();
-    toast(`Removed ${fullName(c)}.`, () => {
-      delete state.removed[c.id];
-      c.updated = stamp(); state.clients.push(c);
-      save(true); renderAll();
-    });
-    return true;
-  }
 
   // ---------- Scheduled visit ----------
   const sd = $("#sched-dialog"), sdForm = $("#sched-form");

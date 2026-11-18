@@ -180,15 +180,22 @@ erases the copy the old version kept in browsers.)
   your organization sees "You don't have access", and people outside it can't open it at all.
 - Every view and change is written to the **Audit log** tab: time, who, what, which client,
   and the before → after values.
+- **Management review:** **Mark completed** puts a visit in **Awaiting review**; the client stays
+  on the due list. A manager (the sheet's owner, or anyone with `Manager` in the Staff tab's
+  **Role** column) then **Approves** it, which makes it the last visit and sets the next due
+  date, or **Sends it back** with a note, which puts the client back on the due list as not
+  done. Only managers can approve, or change a last visit date directly; the script enforces
+  this, not just the page.
 - The client list is read live from the **Clients** tab and saved there straight away. Nothing
   about clients is stored on staff computers. If two people change the same client at once,
   the second is told and shown the latest details instead of overwriting.
 - Everything stays in Google Workspace (covered by your BAA); GitHub is not involved.
 
 Tabs: **Clients** (First name · Last name · Last visit · Next due · Scheduled visit · Notes ·
-On hold · Hold reason · Hold since · Ended · Ended on · Inactive · Deleted · Client ID ·
-Updated), **Staff** (Email · Name · Notes) and **Audit log** (Time · User · Action · Client ·
-Client ID · Details).
+On hold · Hold reason · Hold since · Ended · Ended on · Visit awaiting review · Completed by ·
+Completed on · Reviewed by · Reviewed on · Review note · Inactive · Deleted · Client ID ·
+Updated), **Staff** (Email · Name · Role · Notes) and **Audit log** (Time · User · Action ·
+Client · Client ID · Details). Missing columns are added at the end by themselves.
 
 ## Set it up
 

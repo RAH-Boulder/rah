@@ -18,3 +18,5 @@ in this repository.
   (off every list, record kept with the date).
 - **+ Add client** with the first visit date (a future date is listed as a scheduled first visit).
 - Every change has an Undo, and is saved to the sheet and the audit log straight away.
+- **Mark completed** sends the visit for management review; the client stays on the due list
+  until a manager approves it (then the next visit is due 90 days after it) or sends it back.

@@ -235,6 +235,7 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
 .status-select:hover { color: var(--accent); border-color: var(--accent); }
 .roster .act-col .status-select { min-height: 32px; vertical-align: middle; }
 
+.row-status.review { color: var(--good); }
 .signed-in { white-space: nowrap; }
   </style>
 </head>
@@ -243,7 +244,7 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
     <div class="wrap top-row">
       <div>
         <h1>Supervisory Visits</h1>
-        <p class="small muted today"><span id="today"></span> · <span class="signed-in">Signed in as <?= userEmail ?></span></p>
+        <p class="small muted today"><span id="today"></span> · <span class="signed-in">Signed in as <?= userEmail ?><span id="role-tag"></span></span></p>
       </div>
       <div class="top-actions">
         <button type="button" class="sync-pill" id="sync-pill" hidden></button>
@@ -260,6 +261,7 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
       <a class="tile" href="#due-card"><span class="tile-num" id="soon-count">0</span><span class="tile-label" id="soon-label">Due in next 3 weeks</span></a>
       <a class="tile" href="#due-card"><span class="tile-num" id="unsched-count">0</span><span class="tile-label">Not scheduled yet</span></a>
       <a class="tile" href="#hold-card" hidden><span class="tile-num" id="hold-count">0</span><span class="tile-label">On hold</span></a>
+      <a class="tile" href="#review-card" hidden><span class="tile-num" id="review-count">0</span><span class="tile-label">Awaiting review</span></a>
       <a class="tile" href="#missing-card"><span class="tile-num" id="missing-count">0</span><span class="tile-label">Missing dates</span></a>
     </div>
 
@@ -275,6 +277,12 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
         </div>
       </div>
       <div id="due-list"></div>
+    </section>
+
+    <section class="card alert-card" id="review-card" hidden>
+      <h2>Awaiting review</h2>
+      <p class="small muted" id="review-sub"></p>
+      <div id="review-list"></div>
     </section>
 
     <section class="card" id="hold-card" hidden>
@@ -401,10 +409,31 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
       <p id="dd-info"></p>
       <label>Date of the visit <input type="date" name="completed" required></label>
       <p class="next-due" id="dd-next"></p>
+      <p class="small muted">A manager reviews every completed visit. The client stays on the due list until it's approved.</p>
       <div class="dialog-foot">
         <span class="spacer"></span>
         <button type="button" class="btn ghost" data-close>Cancel</button>
         <button type="submit" class="btn" value="save">Mark completed</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Manager review of a completed visit -->
+  <dialog id="review-dialog" aria-labelledby="rv-title">
+    <form class="dialog-inner" id="review-form" method="dialog">
+      <div class="dialog-head">
+        <h2 id="rv-title">Review visit</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Close">✕</button>
+      </div>
+      <p id="rv-info"></p>
+      <p class="next-due" id="rv-next"></p>
+      <label>Note <span class="muted">(needed if you send it back)</span>
+        <textarea name="note" rows="3" placeholder="e.g. Visit note missing the client's signature"></textarea></label>
+      <div class="dialog-foot">
+        <button type="button" class="btn ghost" id="rv-send-back">Send back</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn ghost" data-close>Cancel</button>
+        <button type="submit" class="btn" value="approve">Approve</button>
       </div>
     </form>
   </dialog>
@@ -422,6 +451,9 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
 
   const CONFIG = { intervalDays: 90, dueSoonDays: 21 };
   const FIELDS = ["first", "last", "lastVisit", "nextDue", "scheduled", "notes", "holdReason"];
+  // Filled in by the sheet's script (who completed / reviewed a visit), never edited on the page.
+  const REVIEW_FIELDS = ["pendingVisit", "completedBy", "completedOn", "reviewedBy", "reviewedOn", "reviewNote"];
+  const pendingOf = c => isDate(c.pendingVisit);
   const DATE_FIELDS = ["lastVisit", "nextDue", "scheduled"];
 
   // ---------- State ----------
@@ -433,7 +465,7 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
     try { p = JSON.parse(localStorage.getItem(PREFS_KEY)); } catch (e) { /* ignore */ }
     return Object.assign({ sort: "nextDue", dir: 1, showInactive: false }, p && typeof p === "object" ? p : {});
   }
-  const state = { clients: [], settings: loadPrefs() };
+  const state = { clients: [], settings: loadPrefs(), manager: false, user: "" };
   function save() { try { localStorage.setItem(PREFS_KEY, JSON.stringify(state.settings)); } catch (e) { /* ignore */ } }
   try { localStorage.removeItem("rah-visits-v1"); } catch (e) { /* the old page's saved copy */ }
   const uid = () => "v-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
@@ -518,12 +550,13 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
   // Due list: overdue, due within dueSoonDays, or with a visit scheduled within dueSoonDays.
   function dueRows() {
     const t = today(), lim = CONFIG.dueSoonDays;
-    return tracked().filter(c => (isDate(c.nextDue) && daysBetween(t, c.nextDue) <= lim) || (isDate(c.scheduled) && daysBetween(t, c.scheduled) <= lim))
-      .map(c => ({ c, key: c.nextDue || c.scheduled, days: isDate(c.nextDue) ? daysBetween(t, c.nextDue) : null }))
+    // A completed visit keeps the client on this list until a manager approves it.
+    return tracked().filter(c => pendingOf(c) || (isDate(c.nextDue) && daysBetween(t, c.nextDue) <= lim) || (isDate(c.scheduled) && daysBetween(t, c.scheduled) <= lim))
+      .map(c => ({ c, key: c.nextDue || c.scheduled || c.pendingVisit, days: isDate(c.nextDue) ? daysBetween(t, c.nextDue) : null }))
       .sort((a, b) => a.key.localeCompare(b.key) || cmpName(a.c, b.c));
   }
   function missingRows() {
-    return tracked().filter(c => !isDate(c.lastVisit) && !isDate(c.nextDue) && !isDate(c.scheduled)).sort(cmpName);
+    return tracked().filter(c => !isDate(c.lastVisit) && !isDate(c.nextDue) && !isDate(c.scheduled) && !pendingOf(c)).sort(cmpName);
   }
 
   function dueStatus(days) {
@@ -544,18 +577,32 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
 
   function renderDue() {
     const rows = dueRows(), by = addDays(today(), CONFIG.dueSoonDays);
-    const overdue = rows.filter(r => r.days != null && r.days < 0).length;
-    const unsched = rows.filter(r => !isDate(r.c.scheduled) || r.c.scheduled < today()).length;
+    const open = rows.filter(r => !pendingOf(r.c)); // visits still to be done
+    const overdue = open.filter(r => r.days != null && r.days < 0).length;
+    const unsched = open.filter(r => !isDate(r.c.scheduled) || r.c.scheduled < today()).length;
     $("#overdue-count").textContent = overdue;
     $("#overdue-count").parentElement.classList.toggle("hot", overdue > 0);
-    $("#soon-count").textContent = rows.length - overdue;
+    $("#soon-count").textContent = open.length - overdue;
     $("#soon-label").textContent = `Due in next ${CONFIG.dueSoonDays % 7 ? CONFIG.dueSoonDays + " days" : plural(CONFIG.dueSoonDays / 7, "week")}`;
     $("#unsched-count").textContent = unsched;
     $("#unsched-count").parentElement.classList.toggle("hot", unsched > 0);
     $("#due-sub").textContent = `Overdue, or due in the next ${CONFIG.dueSoonDays} days (by ${fmtLong(by)}). Each visit is due ${CONFIG.intervalDays} days after the last one, on the closest weekday.`;
     $("#copy-list-btn").hidden = $("#print-btn").hidden = !rows.length;
     $("#due-list").innerHTML = rows.length ? rows.map(r => {
-      const st = dueStatus(r.days), sc = schedText(r.c), id = esc(r.c.id);
+      const id = esc(r.c.id);
+      if (pendingOf(r.c)) return `<div class="row">
+        <div class="row-main">
+          <button type="button" class="row-name" data-edit="${id}">${esc(fullName(r.c))}</button>
+          <span class="row-what">${isDate(r.c.nextDue) ? `Due ${fmtLong(r.c.nextDue)}` : "First visit"}${isDate(r.c.lastVisit) ? ` · last visit ${fmt(r.c.lastVisit)}` : ""}</span>
+          <span class="row-status review">Visit done ${esc(fmtShort(r.c.pendingVisit))} — awaiting manager review</span>
+        </div>
+        <div class="row-btns">
+          ${state.manager ? `<button type="button" class="btn small" data-review="${id}">Review</button>` : ""}
+          ${statusSelect(r.c)}
+        </div>
+      </div>`;
+      const st = dueStatus(r.days), sc = schedText(r.c);
+      const back = /^Sent back/.test(r.c.reviewNote || "") ? `<span class="row-sched none">${esc(r.c.reviewNote)}${r.c.reviewedBy ? ` (${esc(r.c.reviewedBy)})` : ""}</span>` : "";
       const has = isDate(r.c.scheduled) && r.c.scheduled >= today();
       return `<div class="row">
         <div class="row-main">
@@ -563,6 +610,7 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
           <span class="row-what">${isDate(r.c.nextDue) ? `Due ${fmtLong(r.c.nextDue)}` : "First visit"}${isDate(r.c.lastVisit) ? ` · last visit ${fmt(r.c.lastVisit)}` : ""}</span>
           <span class="row-status ${st.cls}">${st.text}</span>
           <span class="row-sched ${sc.cls}">${esc(sc.text)}</span>
+          ${back}
         </div>
         <div class="row-btns">
           <button type="button" class="btn small${has ? " ghost" : ""}" data-sched="${id}">${isDate(r.c.scheduled) ? "Change scheduled date" : "Enter scheduled date"}</button>
@@ -571,6 +619,30 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
         </div>
       </div>`;
     }).join("") : `<p class="all-clear">✓ No supervisory visits are overdue or due in the next ${CONFIG.dueSoonDays} days.</p>`;
+  }
+
+  function renderReview() {
+    const rows = active().filter(pendingOf).sort((a, b) => (a.completedOn || "").localeCompare(b.completedOn || "") || cmpName(a, b));
+    $("#review-card").hidden = !rows.length;
+    $("#review-count").textContent = rows.length;
+    $("#review-count").parentElement.hidden = !rows.length;
+    $("#review-count").parentElement.classList.toggle("hot", rows.length > 0 && state.manager);
+    $("#review-sub").textContent = state.manager
+      ? "Check each visit was done properly. Approve it to count it (the next visit is then due 90 days later), or send it back."
+      : "These visits are done and waiting for a manager to review them.";
+    $("#review-list").innerHTML = rows.map(c => {
+      const id = esc(c.id);
+      return `<div class="row">
+        <div class="row-main">
+          <button type="button" class="row-name" data-edit="${id}">${esc(fullName(c))}</button>
+          <span class="row-what">Visit on ${esc(fmtLong(c.pendingVisit))} · marked completed by ${esc(c.completedBy || "?")}${c.completedOn ? ` on ${fmt(c.completedOn)}` : ""}</span>
+          <span class="row-what">${isDate(c.nextDue) ? `Was due ${fmt(c.nextDue)}` : "First visit"}${isDate(c.lastVisit) ? ` · last approved visit ${fmt(c.lastVisit)}` : ""}</span>
+        </div>
+        <div class="row-btns">${state.manager
+          ? `<button type="button" class="btn small" data-review="${id}">Review</button>`
+          : `<span class="small muted">Waiting for a manager</span>`}</div>
+      </div>`;
+    }).join("");
   }
 
   function renderMissing() {
@@ -627,10 +699,10 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
       const dueCls = n == null || c.onHold ? "" : n < 0 ? "late" : n <= CONFIG.dueSoonDays ? "soon" : "";
       const schedCls = isDate(c.scheduled) && c.scheduled >= t ? "sched" : "";
       return `<tr data-edit="${esc(c.id)}" class="${c.inactive ? "inactive" : ""}" tabindex="0">
-        <td class="name">${esc(fullName(c))}${c.inactive ? ` <span class="tag">${statusLabel(statusOf(c)).toLowerCase()}${c.endedOn ? " " + fmt(c.endedOn) : ""}</span>` : c.onHold ? ' <span class="tag hold">on hold</span>' : ""}</td>
+        <td class="name">${esc(fullName(c))}${pendingOf(c) && !c.inactive ? ' <span class="tag hold">awaiting review</span>' : ""}${c.inactive ? ` <span class="tag">${statusLabel(statusOf(c)).toLowerCase()}${c.endedOn ? " " + fmt(c.endedOn) : ""}</span>` : c.onHold ? ' <span class="tag hold">on hold</span>' : ""}</td>
         ${cellDate(c.lastVisit)}${cellDate(c.nextDue, dueCls)}${cellDate(c.scheduled, schedCls)}
         <td class="act-col">${c.inactive ? "" : `<button type="button" class="btn small ghost grey" data-sched="${esc(c.id)}">Schedule</button>
-          <button type="button" class="btn small ghost grey" data-done="${esc(c.id)}">Completed</button>`}
+          ${pendingOf(c) ? "" : `<button type="button" class="btn small ghost grey" data-done="${esc(c.id)}">Completed</button>`}`}
           ${statusSelect(c)}</td>
       </tr>`;
     }).join("");
@@ -641,13 +713,14 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
   function renderAll() {
     renderedDay = today();
     $("#today").textContent = "Today: " + fmtLong(renderedDay);
-    renderDue(); renderHold(); renderMissing(); renderRoster();
+    $("#role-tag").textContent = state.manager ? " (manager)" : "";
+    renderDue(); renderReview(); renderHold(); renderMissing(); renderRoster();
   }
 
   // ---------- Clicks ----------
   document.addEventListener("click", e => {
     if (e.target.closest("select")) return; // the status dropdown (inside a clickable row)
-    const t = e.target.closest("[data-edit],[data-done],[data-sched],[data-sort],[data-close]");
+    const t = e.target.closest("[data-edit],[data-done],[data-sched],[data-review],[data-sort],[data-close]");
     if (!t) return;
     if (t.dataset.close !== undefined) { t.closest("dialog").close(); return; }
     if (t.dataset.sort) {
@@ -655,6 +728,7 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
       save(); renderRoster(); return;
     }
     if (t.dataset.done) { openDone(t.dataset.done); return; }
+    if (t.dataset.review) { openReview(t.dataset.review); return; }
     if (t.dataset.sched) { openSched(t.dataset.sched); return; }
     if (t.dataset.edit) openEdit(t.dataset.edit, t.dataset.focus);
   });
@@ -685,7 +759,7 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
     rows.forEach(r => {
       const st = dueStatus(r.days).text.toLowerCase();
       const due = isDate(r.c.nextDue) ? `due ${fmt(r.c.nextDue)} (${st})` : "first visit";
-      const sc = isDate(r.c.scheduled) ? `scheduled ${fmt(r.c.scheduled)}` : "not scheduled yet";
+      const sc = pendingOf(r.c) ? `visit done ${fmt(r.c.pendingVisit)}, awaiting review` : isDate(r.c.scheduled) ? `scheduled ${fmt(r.c.scheduled)}` : "not scheduled yet";
       lines.push(`- ${fullName(r.c)}: ${due}, ${sc}`);
     });
     const text = lines.join("\n");
@@ -707,6 +781,7 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
     FIELDS.forEach(f => { edForm.elements[f].value = c ? (c[f] || "") : ""; });
     $("#ed-more-fields").hidden = !c;
     edForm.elements.lastVisit.required = !c;
+    edForm.elements.lastVisit.disabled = !!c && !state.manager; // changes go through Mark completed + review
     $("#ed-status-wrap").hidden = !c;
     edForm.elements.status.value = c ? statusOf(c) : "active";
     holdReasonShown();
@@ -732,7 +807,8 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
   function edHint() {
     const v = edForm.elements.lastVisit.value, due = edForm.elements.nextDue.value;
     let msg = "";
-    if (!editingId) {
+    if (editingId && !state.manager) msg = "Only a manager can change the last visit date. Use Mark completed, and a manager will review the visit.";
+    else if (!editingId) {
       if (!isDate(v)) msg = `Enter the date of the first visit. Each next visit is due ${CONFIG.intervalDays} days after the last one.`;
       else if (v > today()) msg = `This visit hasn't happened yet, so it will be listed as scheduled for ${fmtLong(v)}. Click Mark completed after the visit to start the ${CONFIG.intervalDays}-day count.`;
       else msg = `Next visit will be due ${fmtLong(nextVisit(v))} (${CONFIG.intervalDays} days later, on the closest weekday).`;
@@ -880,7 +956,7 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
   function ddNext() {
     const d = ddForm.elements.completed.value;
     $("#dd-next").innerHTML = isDate(d)
-      ? `Next visit will be due <b>${esc(fmtLong(nextVisit(d)))}</b> (${CONFIG.intervalDays} days after this visit, on the closest weekday).`
+      ? `Once a manager approves it, the next visit will be due <b>${esc(fmtLong(nextVisit(d)))}</b> (${CONFIG.intervalDays} days after this visit, on the closest weekday).`
       : "Enter the date the visit took place.";
   }
   ddForm.elements.completed.addEventListener("input", ddNext);
@@ -889,15 +965,42 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
     const c = byId(doneId), when = ddForm.elements.completed.value;
     if (!c || !isDate(when)) return;
     if (when > today() && !confirm(`${fmt(when)} is in the future. Mark the visit completed anyway?`)) return;
-    const before = { lastVisit: c.lastVisit, nextDue: c.nextDue, scheduled: c.scheduled };
-    c.lastVisit = when;
-    c.nextDue = nextVisit(when);
-    c.scheduled = "";
-    persist(c, "Marked visit completed"); dd.close(); renderAll();
-    toast(`${fullName(c)}: next visit due ${fmt(c.nextDue)}.`, () => {
-      Object.assign(c, before); persist(c, "Undid visit completed"); renderAll();
+    const before = c.scheduled || "";
+    Object.assign(c, { pendingVisit: when, completedBy: state.user, completedOn: today(), scheduled: "" });
+    op(c, "completeVisit", () => c.id, () => c.updated, when); dd.close(); renderAll();
+    toast(`${fullName(c)}: visit marked completed. It's waiting for a manager to review.`, () => {
+      Object.assign(c, { pendingVisit: "", completedBy: "", completedOn: "", scheduled: before });
+      op(c, "cancelCompletion", () => c.id, () => c.updated, before); renderAll();
     });
   });
+
+  // ---------- Manager review ----------
+  const rv = $("#review-dialog"), rvForm = $("#review-form");
+  let reviewId = null;
+  function openReview(id) {
+    const c = byId(id);
+    if (!c || !pendingOf(c) || !state.manager) return;
+    reviewId = id;
+    rvForm.reset();
+    $("#rv-title").textContent = fullName(c);
+    $("#rv-info").textContent = `Visit on ${fmtLong(c.pendingVisit)}, marked completed by ${c.completedBy || "?"}${c.completedOn ? " on " + fmt(c.completedOn) : ""}.`
+      + (isDate(c.nextDue) ? ` It was due ${fmt(c.nextDue)}.` : "");
+    $("#rv-next").innerHTML = `If you approve it, the next visit will be due <b>${esc(fmtLong(nextVisit(c.pendingVisit)))}</b>. If you send it back, ${esc(c.first || "the client")} goes back on the due list as not done.`;
+    rv.showModal();
+  }
+  function review(approve) {
+    const c = byId(reviewId), note = rvForm.elements.note.value.trim();
+    if (!c) return;
+    if (!approve && !note) { toast("Add a note saying what needs to be done, then click Send back."); rvForm.elements.note.focus(); return; }
+    const visit = c.pendingVisit;
+    if (approve) Object.assign(c, { lastVisit: visit, nextDue: nextVisit(visit), pendingVisit: "", reviewedBy: state.user, reviewedOn: today(), reviewNote: note });
+    else Object.assign(c, { pendingVisit: "", completedBy: "", completedOn: "", reviewedBy: state.user, reviewedOn: today(), reviewNote: "Sent back: " + note });
+    op(c, "reviewVisit", () => c.id, () => c.updated, approve, note);
+    rv.close(); renderAll();
+    toast(approve ? `Approved ${fullName(c)}'s visit on ${fmt(visit)}. Next visit due ${fmt(c.nextDue)}.` : `Sent back ${fullName(c)}'s visit. They're on the due list again.`);
+  }
+  rvForm.addEventListener("submit", e => { e.preventDefault(); review(true); });
+  $("#rv-send-back").addEventListener("click", () => review(false));
 
   // ---------- Talking to the Google Sheet ----------
   // google.script.run calls the functions in Code.gs, as the signed-in staff member.
@@ -910,9 +1013,12 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
 
   // Saves run one at a time, so a quick change and its Undo arrive in order.
   let queue = Promise.resolve(), pending = 0;
-  function persist(c, action) {
+  function persist(c, action) { op(c, "saveClient", () => Object.assign({}, c), action); }
+  // Runs one of the sheet script's functions for client `c`. Arguments given as functions are
+  // worked out when it's this call's turn (so the newest `updated` stamp is sent).
+  function op(c, fn, ...args) {
     pending++; setPill("saving");
-    queue = queue.then(() => call("saveClient", Object.assign({}, c), action).then(res => {
+    queue = queue.then(() => call(fn, ...args.map(a => (typeof a === "function" ? a() : a))).then(res => {
       if (res.conflict) {
         Object.assign(c, normalize(res.client));
         toast(`${fullName(c)} was just changed by someone else, so their latest details are shown. Please make your change again.`);
@@ -920,7 +1026,7 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
         Object.assign(c, normalize(res.client));
       }
     }).catch(err => {
-      toast(`Couldn't save (${errText(err)}). The list has been reloaded; please try again.`);
+      toast(`Couldn't save: ${errText(err)}. The list has been reloaded.`);
       pending = 0; load(false);
     }).finally(() => {
       pending = Math.max(0, pending - 1);
@@ -937,6 +1043,8 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
     rec.endReason = sc.endReason === "deceased" ? "deceased" : sc.endReason ? "ended" : "";
     if (rec.endReason) rec.inactive = true;
     if (!rec.inactive) { rec.endReason = ""; rec.endedOn = ""; }
+    REVIEW_FIELDS.forEach(f => { rec[f] = String(sc[f] || ""); });
+    ["pendingVisit", "completedOn", "reviewedOn"].forEach(f => { rec[f] = parseDate(rec[f]) || ""; });
     if (!rec.nextDue && isDate(rec.lastVisit)) rec.nextDue = nextVisit(rec.lastVisit);
     return rec;
   }
@@ -946,6 +1054,7 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
     setPill("loading");
     return call("getClients", !!opened).then(res => {
       state.clients = (res.clients || []).filter(c => c && c.id && (c.first || c.last)).map(normalize);
+      state.manager = !!res.manager; state.user = String(res.user || "");
       loadedAt = Date.now();
       $("#loading").hidden = true;
       $("#app-content").hidden = false;

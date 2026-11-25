@@ -16,7 +16,8 @@ in this repository.
   to the closest weekday: Saturday → Friday, Sunday → Monday), and a status dropdown:
   **Active**, **On hold** (off the due list, with a reason), **Ended care** / **Deceased**
   (off every list, record kept with the date).
-- **+ Add client** with the first visit date (a future date is listed as a scheduled first visit).
+- **+ Add client** with the first visit (start) date; the first supervisory visit is due 90 days after it.
 - Every change has an Undo, and is saved to the sheet and the audit log straight away.
-- **Mark completed** sends the visit for management review; the client stays on the due list
-  until a manager approves it (then the next visit is due 90 days after it) or sends it back.
+- **Mark completed** moves the visit to **Awaiting review** (it's no longer under Visits due). A
+  manager approves it (the next visit is then due 90 days after it) or sends it back, which puts
+  the client back on the due list.

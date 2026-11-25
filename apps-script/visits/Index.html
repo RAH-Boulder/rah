@@ -550,9 +550,9 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
   // Due list: overdue, due within dueSoonDays, or with a visit scheduled within dueSoonDays.
   function dueRows() {
     const t = today(), lim = CONFIG.dueSoonDays;
-    // A completed visit keeps the client on this list until a manager approves it.
-    return tracked().filter(c => pendingOf(c) || (isDate(c.nextDue) && daysBetween(t, c.nextDue) <= lim) || (isDate(c.scheduled) && daysBetween(t, c.scheduled) <= lim))
-      .map(c => ({ c, key: c.nextDue || c.scheduled || c.pendingVisit, days: isDate(c.nextDue) ? daysBetween(t, c.nextDue) : null }))
+    // Visits waiting for a manager's review are listed only under Awaiting review.
+    return tracked().filter(c => !pendingOf(c) && ((isDate(c.nextDue) && daysBetween(t, c.nextDue) <= lim) || (isDate(c.scheduled) && daysBetween(t, c.scheduled) <= lim)))
+      .map(c => ({ c, key: c.nextDue || c.scheduled, days: isDate(c.nextDue) ? daysBetween(t, c.nextDue) : null }))
       .sort((a, b) => a.key.localeCompare(b.key) || cmpName(a.c, b.c));
   }
   function missingRows() {
@@ -577,7 +577,7 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
 
   function renderDue() {
     const rows = dueRows(), by = addDays(today(), CONFIG.dueSoonDays);
-    const open = rows.filter(r => !pendingOf(r.c)); // visits still to be done
+    const open = rows;
     const overdue = open.filter(r => r.days != null && r.days < 0).length;
     const unsched = open.filter(r => !isDate(r.c.scheduled) || r.c.scheduled < today()).length;
     $("#overdue-count").textContent = overdue;
@@ -590,17 +590,6 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
     $("#copy-list-btn").hidden = $("#print-btn").hidden = !rows.length;
     $("#due-list").innerHTML = rows.length ? rows.map(r => {
       const id = esc(r.c.id);
-      if (pendingOf(r.c)) return `<div class="row">
-        <div class="row-main">
-          <button type="button" class="row-name" data-edit="${id}">${esc(fullName(r.c))}</button>
-          <span class="row-what">${isDate(r.c.nextDue) ? `Due ${fmtLong(r.c.nextDue)}` : "First visit"}${isDate(r.c.lastVisit) ? ` · last visit ${fmt(r.c.lastVisit)}` : ""}</span>
-          <span class="row-status review">Visit done ${esc(fmtShort(r.c.pendingVisit))} — awaiting manager review</span>
-        </div>
-        <div class="row-btns">
-          ${state.manager ? `<button type="button" class="btn small" data-review="${id}">Review</button>` : ""}
-          ${statusSelect(r.c)}
-        </div>
-      </div>`;
       const st = dueStatus(r.days), sc = schedText(r.c);
       const back = /^Sent back/.test(r.c.reviewNote || "") ? `<span class="row-sched none">${esc(r.c.reviewNote)}${r.c.reviewedBy ? ` (${esc(r.c.reviewedBy)})` : ""}</span>` : "";
       const has = isDate(r.c.scheduled) && r.c.scheduled >= today();
@@ -759,7 +748,7 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
     rows.forEach(r => {
       const st = dueStatus(r.days).text.toLowerCase();
       const due = isDate(r.c.nextDue) ? `due ${fmt(r.c.nextDue)} (${st})` : "first visit";
-      const sc = pendingOf(r.c) ? `visit done ${fmt(r.c.pendingVisit)}, awaiting review` : isDate(r.c.scheduled) ? `scheduled ${fmt(r.c.scheduled)}` : "not scheduled yet";
+      const sc = isDate(r.c.scheduled) ? `scheduled ${fmt(r.c.scheduled)}` : "not scheduled yet";
       lines.push(`- ${fullName(r.c)}: ${due}, ${sc}`);
     });
     const text = lines.join("\n");
@@ -809,9 +798,8 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
     let msg = "";
     if (editingId && !state.manager) msg = "Only a manager can change the last visit date. Use Mark completed, and a manager will review the visit.";
     else if (!editingId) {
-      if (!isDate(v)) msg = `Enter the date of the first visit. Each next visit is due ${CONFIG.intervalDays} days after the last one.`;
-      else if (v > today()) msg = `This visit hasn't happened yet, so it will be listed as scheduled for ${fmtLong(v)}. Click Mark completed after the visit to start the ${CONFIG.intervalDays}-day count.`;
-      else msg = `Next visit will be due ${fmtLong(nextVisit(v))} (${CONFIG.intervalDays} days later, on the closest weekday).`;
+      if (!isDate(v)) msg = `Enter the client's first visit (start) date. The first supervisory visit is due ${CONFIG.intervalDays} days after it.`;
+      else msg = `First supervisory visit will be due ${fmtLong(nextVisit(v))} (${CONFIG.intervalDays} days after this date, on the closest weekday).`;
     } else if (isDate(v) && !isDate(due)) msg = `Next visit would be due ${fmtLong(nextVisit(v))}.`;
     else if (isDate(due) && weekday(due) % 6 === 0) msg = "Note: this due date is on a weekend.";
     else if (isDate(v) && due === nextVisit(v)) msg = `Next due is ${CONFIG.intervalDays} days after this visit, on the closest weekday.`;
@@ -825,8 +813,8 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
     if (!v.first || !v.last) return;
     if (!editingId) {
       if (!isDate(v.lastVisit)) return;
-      if (v.lastVisit > today()) { v.scheduled = v.nextDue = v.lastVisit; v.lastVisit = ""; }
-      else { v.nextDue = nextVisit(v.lastVisit); v.scheduled = ""; }
+      v.nextDue = nextVisit(v.lastVisit); // first supervisory visit: 90 days after the start date
+      v.scheduled = "";
     } else if (!v.nextDue && isDate(v.lastVisit)) v.nextDue = nextVisit(v.lastVisit);
     const prev = editingId ? byId(editingId) : null;
     Object.assign(v, statusFields(editingId ? edForm.elements.status.value : "active", v.holdReason, prev));
@@ -839,7 +827,7 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
     } else {
       c = Object.assign({ id: uid(), updated: "" }, v);
       state.clients.push(c);
-      toast(`Added ${v.first} ${v.last}.` + (v.lastVisit ? ` Next visit due ${fmt(v.nextDue)}.` : ` First visit scheduled ${fmt(v.scheduled)}.`));
+      toast(`Added ${v.first} ${v.last}. First supervisory visit due ${fmt(v.nextDue)}.`);
     }
     persist(c, editingId ? "Edited client" : "Added client"); ed.close(); renderAll();
   });
@@ -879,7 +867,7 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
     const before = c.scheduled || "";
     c.scheduled = d;
     persist(c, "Scheduled visit"); sd.close(); renderAll();
-    toast(`${fullName(c)}: visit scheduled ${fmt(d)}.`, () => { c.scheduled = before; persist(c, "Undid scheduled visit"); renderAll(); });
+    toast(`${fullName(c)}: visit scheduled ${fmt(d)}.`, () => { live(c).scheduled = before; persist(c, "Undid scheduled visit"); renderAll(); });
   });
   $("#sd-clear").addEventListener("click", () => {
     const c = byId(schedId);
@@ -887,7 +875,7 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
     const before = c.scheduled;
     c.scheduled = "";
     persist(c, "Cleared scheduled visit"); sd.close(); renderAll();
-    toast(`${fullName(c)}: scheduled date cleared.`, () => { c.scheduled = before; persist(c, "Undid clearing scheduled visit"); renderAll(); });
+    toast(`${fullName(c)}: scheduled date cleared.`, () => { live(c).scheduled = before; persist(c, "Undid clearing scheduled visit"); renderAll(); });
   });
 
   // ---------- On hold ----------
@@ -934,7 +922,7 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
       msg = was === "hold" ? `${fullName(c)} is off hold.` : `${fullName(c)} is an active client again.`;
       if (isDate(c.nextDue) && daysBetween(today(), c.nextDue) < 0) msg += ` Their visit was due ${fmt(c.nextDue)}, so they're on the overdue list.`;
     }
-    toast(msg, () => { Object.assign(c, before); persist(c, `Undid status change (back to ${statusLabel(was)})`); renderAll(); });
+    toast(msg, () => { Object.assign(live(c), before); persist(c, `Undid status change (back to ${statusLabel(was)})`); renderAll(); });
   }
 
   // ---------- Visit completed ----------
@@ -967,10 +955,10 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
     if (when > today() && !confirm(`${fmt(when)} is in the future. Mark the visit completed anyway?`)) return;
     const before = c.scheduled || "";
     Object.assign(c, { pendingVisit: when, completedBy: state.user, completedOn: today(), scheduled: "" });
-    op(c, "completeVisit", () => c.id, () => c.updated, when); dd.close(); renderAll();
+    op(c, "completeVisit", () => c.id, stampOf(c), when); dd.close(); renderAll();
     toast(`${fullName(c)}: visit marked completed. It's waiting for a manager to review.`, () => {
-      Object.assign(c, { pendingVisit: "", completedBy: "", completedOn: "", scheduled: before });
-      op(c, "cancelCompletion", () => c.id, () => c.updated, before); renderAll();
+      Object.assign(live(c), { pendingVisit: "", completedBy: "", completedOn: "", scheduled: before });
+      op(c, "cancelCompletion", () => c.id, stampOf(c), before); renderAll();
     });
   });
 
@@ -995,7 +983,7 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
     const visit = c.pendingVisit;
     if (approve) Object.assign(c, { lastVisit: visit, nextDue: nextVisit(visit), pendingVisit: "", reviewedBy: state.user, reviewedOn: today(), reviewNote: note });
     else Object.assign(c, { pendingVisit: "", completedBy: "", completedOn: "", reviewedBy: state.user, reviewedOn: today(), reviewNote: "Sent back: " + note });
-    op(c, "reviewVisit", () => c.id, () => c.updated, approve, note);
+    op(c, "reviewVisit", () => c.id, stampOf(c), approve, note);
     rv.close(); renderAll();
     toast(approve ? `Approved ${fullName(c)}'s visit on ${fmt(visit)}. Next visit due ${fmt(c.nextDue)}.` : `Sent back ${fullName(c)}'s visit. They're on the due list again.`);
   }
@@ -1012,19 +1000,19 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
   const errText = err => String((err && err.message) || err || "unknown error").replace(/^Exception:\s*/, "");
 
   // Saves run one at a time, so a quick change and its Undo arrive in order.
-  let queue = Promise.resolve(), pending = 0;
-  function persist(c, action) { op(c, "saveClient", () => Object.assign({}, c), action); }
+  let queue = Promise.resolve(), pending = 0, opSeq = 0;
+  // The current copy of a client (a reload replaces the list, so look it up by id).
+  const live = c => byId(c.id) || c;
+  const stampOf = c => () => live(c).updated;
+  function persist(c, action) { op(c, "saveClient", () => Object.assign({}, live(c)), action); }
   // Runs one of the sheet script's functions for client `c`. Arguments given as functions are
   // worked out when it's this call's turn (so the newest `updated` stamp is sent).
   function op(c, fn, ...args) {
-    pending++; setPill("saving");
+    pending++; opSeq++; setPill("saving");
     queue = queue.then(() => call(fn, ...args.map(a => (typeof a === "function" ? a() : a))).then(res => {
-      if (res.conflict) {
-        Object.assign(c, normalize(res.client));
-        toast(`${fullName(c)} was just changed by someone else, so their latest details are shown. Please make your change again.`);
-      } else {
-        Object.assign(c, normalize(res.client));
-      }
+      const cur = live(c);
+      Object.assign(cur, normalize(res.client));
+      if (res.conflict) toast(`${fullName(cur)} was just changed by someone else, so their latest details are shown. Please make your change again.`);
     }).catch(err => {
       toast(`Couldn't save: ${errText(err)}. The list has been reloaded.`);
       pending = 0; load(false);
@@ -1051,8 +1039,12 @@ dialog::backdrop { background: rgba(15, 20, 26, .5); }
 
   let loadedAt = 0;
   function load(opened) {
-    setPill("loading");
+    const seq = opSeq;
+    if (!pending) setPill("loading");
     return call("getClients", !!opened).then(res => {
+      // A change was made while this was loading: this copy may be out of date, so load again
+      // once every change has been saved, instead of showing it.
+      if (seq !== opSeq || pending) { queue.then(() => load(false)); return; }
       state.clients = (res.clients || []).filter(c => c && c.id && (c.first || c.last)).map(normalize);
       state.manager = !!res.manager; state.user = String(res.user || "");
       loadedAt = Date.now();

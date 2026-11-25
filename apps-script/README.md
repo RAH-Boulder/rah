@@ -180,8 +180,8 @@ erases the copy the old version kept in browsers.)
   your organization sees "You don't have access", and people outside it can't open it at all.
 - Every view and change is written to the **Audit log** tab: time, who, what, which client,
   and the before → after values.
-- **Management review:** **Mark completed** puts a visit in **Awaiting review**; the client stays
-  on the due list. A manager (the sheet's owner, or anyone with `Manager` in the Staff tab's
+- **Management review:** **Mark completed** moves a visit to **Awaiting review** (and off the
+  Visits due list). A manager (the sheet's owner, or anyone with `Manager` in the Staff tab's
   **Role** column) then **Approves** it, which makes it the last visit and sets the next due
   date, or **Sends it back** with a note, which puts the client back on the due list as not
   done. Only managers can approve, or change a last visit date directly; the script enforces
